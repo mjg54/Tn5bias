@@ -1,0 +1,3047 @@
+%% LyX 2.0.6 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+%% Usage:
+%%      gen_tex_pr
+%%      require("knitr")
+%%      knit2pdf("knitr-example.Rnw")
+%%      purl("knitr-example.Rnw", documentation = 2)
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[sc]{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{colortbl, xcolor}
+\usepackage{geometry}
+\usepackage[authoryear]{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+\textwidth 6.75in
+\textheight 9.25in
+\topmargin -.875in
+\oddsidemargin -.125in
+\evensidemargin -.125in
+\usepackage{fancyhdr} 
+\fancyhf{}
+ 
+
+\pagestyle{fancy}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\usepackage{url}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=2,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
+\hypersetup{
+ pdfstartview={XYZ null null 1}}
+\usepackage{breakurl}
+\usepackage{lscape}
+\usepackage{subfig}
+\usepackage{cleveref}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{appendix}
+\crefname{appsec}{Appendix}{Appendices}
+\usepackage{listings}
+\usepackage{verbatim}
+
+\usepackage{color}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ %
+backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
+breaklines=true,                 % sets automatic line breaking
+captionpos=b,                    % sets the caption-position to bottom
+commentstyle=\color{mygreen},    % comment style
+deletekeywords={...},            % if you want to delete keywords from the given language
+escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+frame=single,                    % adds a frame around the code
+keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+keywordstyle=\color{blue},       % keyword style
+language=R,                 % the language of the code
+morekeywords={*,...},            % if you want to add more keywords to the set
+numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+numbersep=5pt,                   % how far the line-numbers are from the code
+numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+showstringspaces=false,          % underline spaces within strings only
+showtabs=false,                  % show tabs within strings adding particular underscores
+stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+stringstyle=\color{mymauve},     % string literal style
+tabsize=2,                       % sets default tabsize to 2 spaces
+%title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+\newcommand{\QuoteTitle}[1]{\centerline{\textit{\textbf{#1}}}}
+
+\begin{document}
+
+% generate files named with project-....png under figure dir.
+
+
+<<setup_analysis, include=FALSE, cache=FALSE>>=
+# set global chunk options
+#render_listings()
+@
+
+
+%% Now begin customising things. See the fancyhdr docs for more info.
+
+\chead{}
+\lhead[\sf \thepage]{\sf \leftmark}
+\rhead[\sf \leftmark]{\sf \thepage}
+\lfoot{}
+\rfoot{}
+
+
+
+\title{Characterization and correction of ATAC-seq Tn5 sequence bias}
+
+
+\author{Jacob Wolpe and Michael J. Guertin}
+\maketitle
+
+
+% insert the table of contents
+\tableofcontents{}
+
+%\listoftables
+%\addcontentsline{toc}{chapter}{List of tables}
+
+\listoffigures
+%\addcontentsline{toc}{chapter}{List of figures}
+
+\clearpage
+\section {Processing ATAC-seq reads}
+
+\subsection{Retrieving FASTA and FASTQ files}
+
+\noindent All the files should be named with the cell type, conditions, description, the replicate
+number. No spaces. This makes it so that
+downstream analyses can be automated. The ATAC-seq data is GSE92674
+\citep{martins2017universal}. \par
+\medskip
+\noindent \texttt{fastq-dump} is an SRA tool
+\citep{kodama2011sequence}. 
+
+\par
+\noindent I explicitly
+indicate software dependencies preceding the relevant
+chunks (let me know if I miss any). Software
+installs can be very annoying. My advice: read
+the \texttt{README} files.\\
+\medskip
+\noindent \textbf{Software installations}:\par
+\medskip
+\noindent 
+\texttt{sra-tools}: \url{https://github.com/ncbi/sra-tools}\\
+
+\noindent Code: \url{https://raw.githubusercontent.com/guertinlab/Tn5bias/master/section1\_1.sh}
+<<shell_fastq_naming, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh' >>=
+
+cd ~/Desktop/atac_test
+
+#Rivanna 
+#module load sratoolkit/2.9.1
+#cd /scratch/mjg7y/
+fasterq-dump SRR5123141
+fasterq-dump SRR5123142
+
+gzip *fastq
+
+mv SRR5123141_1.fastq.gz C1_gDNA_rep1_PE1.fastq.gz 
+mv SRR5123141_2.fastq.gz C1_gDNA_rep1_PE2.fastq.gz
+mv SRR5123142_1.fastq.gz C1_gDNA_rep2_PE1.fastq.gz
+mv SRR5123142_2.fastq.gz C1_gDNA_rep2_PE2.fastq.gz
+
+#you also need to download the human genome:
+#one can use the following command on a Linux:
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz
+wget https://hgdownload.cse.ucsc.edu/goldenpath/hg38/chromosomes/chrM.fa.gz
+
+#unzip 
+gunzip hg38.fa.gz
+gunzip chrM.fa.gz
+
+@ 
+
+\subsection{Processing ATAC reads}
+\noindent The first task is to build the genome indices with
+\texttt{bowtie2}. This only has to be performed once per genome.  We trim the first few bases with \texttt{fastp} \citep{chen2018fastp} . We want to
+exclude the chrM reads because ATAC enriches for chrM DNA and there
+are regions of the nuclear genome that are mitochondrial in
+origin. This causes reads to pile up in these nuclear regions. We
+align to the \texttt{chrM} genome using \texttt{bowtie2} \citep{19261174}. Next we
+use a few \texttt{samtools} \citep{li2009sequence} commands to
+manipulate the files with the end result being two \texttt{FASTQ}
+files that lack \texttt{chrM}-aligned reads and have the first four
+bases trimmed. \textbf{Note that the trimming of the first four bases
+  is based upon my understanding of the molecular biology, but this
+  may need to change based upon the results of this project.} 
+We align the remaining reads to the \texttt{hg38} genome using \texttt{bowtie2}. Then we convert the \texttt{sam} file to the compressed and sorted \texttt{BAM} format using
+\texttt{samtools} \citep{li2009sequence}. The  \texttt{fixmate},
+\texttt{sort}, and \texttt{markdup} steps removes paired reads in
+which the alignments were previously seen. These are likely PCR
+duplicate amplicons, and unlikely to arise independently. I ran it
+through \texttt{seqOutBias} \citep{martins2017universal} , but I don't think it is strictly
+necessary, as we are going to process the paired end \texttt{BAM}
+files and the \textit{plus} and \textit{minus}-aligned reads
+separately so that we can track what is going on.\par
+\medskip
+\noindent \textbf{Software installations}:\par
+\medskip
+\noindent \texttt{fastp}: \url{https://github.com/OpenGene/fastp/blob/master/README.md}\par
+\medskip
+\noindent \texttt{bowtie2}: \url{http://bowtie-bio.sourceforge.net/bowtie2/index.shtml}\par
+\medskip
+\noindent \texttt{samtools}: \url{http://www.htslib.org}\par
+\medskip
+\noindent \texttt{seqOutBias}:
+\url{https://github.com/guertinlab/seqOutBias} \\
+
+
+\noindent Code: \url{https://raw.githubusercontent.com/guertinlab/Tn5bias/master/section1\_2.sh}
+<<shell_fastq_processing2, echo=TRUE, prompt=FALSE, eval=FALSE, size="footnotesize", engine='sh' >>=
+
+#build index genome
+bowtie2-build hg38.fa hg38
+bowtie2-build chrM.fa chrM
+
+for fq in C1*PE1.fastq.gz
+do
+    name=$(echo $fq | awk -F"_PE1.fastq.gz" '{print $1}')
+    echo $name
+#    ./fastp -f 4 -F 4 -i ${name}_PE1.fastq.gz -I ${name}_PE2.fastq.gz \
+#       -o ${name}_PE1.trimmed.fastq.gz -O ${name}_PE2.trimmed.fastq.gz
+    bowtie2 -x chrM -1 ${name}_PE1.fastq.gz -2 ${name}_PE2.fastq.gz \
+       | samtools view -b - | samtools sort - -o $name.sorted.chrM.bam 
+# I cannot figure out how to pipe the previous line with the next two lines.
+    samtools index $name.sorted.chrM.bam
+    samtools view -b $name.sorted.chrM.bam '*' | samtools sort -n - \
+       | bamToFastq -i - -fq ${name}_PE1.chrM.fastq -fq2 ${name}_PE2.chrM.fastq
+    gzip *.chrM.fastq
+    rm $name.sorted.chrM.bam
+    bowtie2 --maxins 500 -x hg38 -1 ${name}_PE1.chrM.fastq.gz -2 ${name}_PE2.chrM.fastq.gz \
+       | samtools view -bS - | samtools sort -n - | samtools fixmate -m - - \
+       | samtools sort - | samtools markdup -r - $name.bam
+#   seqOutBias hg38.fa $name.bam --no-scale --bw=${name}.bigWig --shift-counts --read-size=30
+done
+
+@ 
+
+\subsection{Other enzymes}
+\noindent Code: \url{https://raw.githubusercontent.com/guertinlab/Tn5bias/master/section1\_2.sh}
+<<shell_fastq_processing, echo=TRUE, prompt=FALSE, eval=FALSE, size="footnotesize", engine='sh' >>=
+module load sratoolkit/2.9.1
+fasterq-dump SRR535737
+fasterq-dump SRR535738
+fasterq-dump SRR535739
+fasterq-dump SRR535740
+fasterq-dump SRR535741
+fasterq-dump SRR535742
+fasterq-dump SRR535743
+fasterq-dump SRR535744
+fasterq-dump SRR535735
+fasterq-dump SRR535736
+
+
+mv SRR535737.fastq mm10_liver_Benzonase0.25U.fastq
+mv SRR535738.fastq mm10_liver_Benzonase1U_1.fastq
+mv SRR535739.fastq mm10_liver_Benzonase1U_2.fastq
+mv SRR535740.fastq mm10_liver_Benzonase4U.fastq
+mv SRR535741.fastq mm10_liver_Cyanase0.25U.fastq
+mv SRR535742.fastq mm10_liver_Cyanase1U_1.fastq
+mv SRR535743.fastq mm10_liver_Cyanase1U_2.fastq
+mv SRR535744.fastq mm10_liver_Cyanase4U.fastq
+mv SRR535735.fastq DNaseI_a.fastq 
+mv SRR535736.fastq DNaseI_b.fastq
+
+cat *Benz* > mm10_liver_Benzonase.fastq 
+cat *Cyan* > mm10_liver_Cyanase.fastq
+cat DNaseI_*.fastq > mm10_liver_DNase.fastq 
+gzip *ase.fastq
+
+
+#build index genome
+#bowtie2-build mm10.fa mm10
+module load gcc/7.1.0 bowtie2/2.1.0
+module load samtools/1.10
+
+for fq in mm10_liver_D*ase.fastq.gz
+do
+    name=$(echo $fq | awk -F".fastq.gz" '{print $1}')
+    echo $name
+    bowtie2 -p 4 --maxins 500 -x mm10 -U ${name}.fastq.gz  \
+       | samtools view -bS - | samtools sort - -o $name.bam
+#    seqOutBias mm10.fa $name.bam --no-scale --bw=${name}.bigWig --shift-counts --read-size=30
+done
+
+
+module load gcc/7.1.0
+module load seqoutbias/1.2.0
+module load fastx-toolkit/0.0.14
+module load bedtools/2.26.0
+module load intel/20.0  
+module load intelmpi/20.0
+module load python/3.7.7
+#ijob -A guertinlab -c 1 -p standard -t 10:00:00
+
+for i in mm10*ase.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+#separate plus and minus strand aligning reads:
+    samtools view -bh -F 20 ${name}.bam > ${name}_plus.bam
+    samtools view -bh -f 0x10 ${name}.bam > ${name}_minus.bam
+#run seqOutBias to get the bed
+    seqOutBias mm10.fa ${name}_plus.bam --no-scale --shift-counts \
+                                 --bed=${name}_plus.bed \
+                                 --bw=${name}_plus.bigWig --read-size=30
+    seqOutBias mm10.fa ${name}_minus.bam --no-scale --shift-counts \
+                                 --bed=${name}_minus.bed \
+                                 --bw=${name}_minus.bigWig --read-size=30
+    python bedToOneEntryBed.py -i ${name}_plus.bed
+    python bedToOneEntryBed.py -i ${name}_minus.bed
+#these bed files can be used to get the sequence flanking ALL Tn5 insertion sites, 
+#so we can see the precise nature of the sequence bias for each PE/strand combination
+    awk '{$2 = $2 - 10; print}' ${name}_plus.oneentry.bed | \
+       awk '{OFS="\t";} {$3 = $2 + 21; print}' | grep -v - | \
+       fastaFromBed -fi mm10.fa -s -bed stdin -fo ${name}_plus.fasta
+    awk '{$2 = $2 - 10; print}' ${name}_minus.oneentry.bed | \
+       awk '{OFS="\t";} {$3 = $2 + 21; print}' |  grep -v - | \
+       fastaFromBed -fi mm10.fa -s -bed stdin -fo ${name}_minus.fasta
+done
+
+module load gcc/9.2.0
+module load fastx-toolkit/0.0.14
+
+
+for i in mm10*ase.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    awk 'BEGIN{FS=" "}{if(!/>/){print toupper($0)}else{print $1}}' ${name}_minus.fasta | \
+        fastx_reverse_complement -o ${name}_minus_RC.fasta
+done
+
+
+@ 
+
+
+\clearpage
+\section{Characterizing the sequence bias directly from ATAC reads}
+
+I have already run through the analysis with the BAM file "CEM-C7\_untreated\_rep2.bam", but the results are confusing.
+The only way that I can think to make sense of the spacing of the sequence bias is to treat PE1 and PE2 reads 
+separately and reads that align to the plus and minus strand
+separately. Then we can empirically determine whether the seqLogo spacing is offset in these analyses and if the Hill Climbing-
+determined k-mer mask is offset between PE and strand status. If the
+seqLogo and mask are offset the same degree in the two analyses, then
+it may mean that the plus and  minus reads need to be scaled
+separately and then we can build on the the molecular biology
+illustration the sequence bias and see if this makes sense on the Tn5 structure, if it is known how the structure corresponds to precise insertion/cut site.
+
+
+\subsection{Python script: \texttt{bedToOneEntryBed.py}}
+The file is at
+\url{https://raw.githubusercontent.com/guertinlab/Tn5bias/master/bedToOneEntryBed.py}
+and it converts a bed to a bed
+with one entry per instance, so that a FASTA entry is present for each
+ATAC insertion event.
+
+<<python_norm, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='python'>>=
+#! /sw/bin/python
+import re
+import string
+import sys
+import getopt
+import os
+import itertools
+import glob
+
+def function(fqFileName):
+    infile=open(fqFileName, 'r')
+    outfile=open(string.split(fqFileName,'.bed')[0]+'.oneentry.bed', 'w')
+    while 1:
+        line=infile.readline()
+        if not line: break
+        for i in range(int(line.split()[4])):
+            outfile.write('%s'%(line))
+    infile.close()
+    outfile.close()
+    
+    
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "i:h", ["infile=","help"])
+    except getopt.GetoptError, err:
+        print str(err)
+        sys.exit(2)
+    infile = False
+    for opt, arg in opts:
+        if opt in ('-i', '--infile'):
+            infile = arg
+        elif opt in ('-h', '--help'):
+            print '\n./bedToOneEntryBed.py -i test_PE1_plus_not_scaled.bed'
+            sys.exit()
+    if infile:
+        print infile
+        function(infile)
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+@ 
+
+\subsection{Separate BAM by strand and PE status and retrieve the
+  FASTA sequence}
+\noindent Next we will split PE and minus/plus reads and get their sequences. I
+don't know if \texttt{-{}-shift-counts} appropriately shifts the BED
+out of minus aligned reads. The way to test this is to run with and
+without this option and look at the output and determine if it
+changes. If this does not shift the BED, then the \texttt{awk} code
+that extends the window needs to be modified with a 1 base shift. Let
+me know once you test this and we should discuss what has to change in
+the \texttt{awk} lines below. \textbf{this section is hard coded for
+  the CEM-C7\_untreated\_rep2 sample, but you can change the name of
+  the file and proceed to determine whether the shift counts option
+  applies to the BED output in seqOutBias. Once you determine that, it
+  will be a good excercise to incorporate this code into a loop that
+  operates on all aligned BAM files.} \\
+
+\noindent Code: \url{https://raw.githubusercontent.com/guertinlab/Tn5bias/master/section2\_2.sh}
+<<shell_annotations, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh' >>=
+
+#comments are for Rivanna (in progress)
+wget https://raw.githubusercontent.com/guertinlab/Tn5bias/master/bedToOneEntryBed.py
+#module load gcc/7.1.0
+#module load seqoutbias/1.2.0
+#moduel load fastx-toolkit/0.0.14
+#module load bedtools/2.26.0
+#module load intel/20.0  
+#module load intelmpi/20.0
+#module load python/3.7.7
+#ijob -A guertinlab -c 1 -p standard -t 10:00:00
+
+#don't need to sparte PE2 and PE1, first cat them, them process?
+for i in C1_gDNA_rep*.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+#separate PE1 and PE2 reads
+#    samtools view -b -f 0x0040 ${name}.bam > ${name}_PE1.bam
+#    samtools view -b -f 0x0080 ${name}.bam > ${name}_PE2.bam
+#separate plus and minus strand aligning reads:
+    samtools view -bh -F 20 ${name}.bam > ${name}_plus.bam
+    samtools view -bh -f 0x10 ${name}.bam > ${name}_minus.bam
+#    samtools view -bh -F 20 ${name}_PE2.bam > ${name}_PE2_plus.bam
+#    samtools view -bh -f 0x10 ${name}_PE2.bam > ${name}_PE2_minus.bam
+#run seqOutBias to get the bed
+    seqOutBias hg38.fa ${name}_plus.bam --no-scale --out=no_scale.tbl \
+                                 --bed=${name}_plus_no_shift.bed \
+                                 --bw=${name}_plus_no_shift.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --no-scale --out=no_scale.tbl \
+                                 --bed=${name}_minus_no_shift.bed \
+                                 --bw=${name}_minus_no_shift.bigWig --read-size=30
+    python bedToOneEntryBed.py -i ${name}_plus_no_shift.bed
+    python bedToOneEntryBed.py -i ${name}_minus_no_shift.bed
+#these bed files can be used to get the sequence flanking ALL Tn5 insertion sites, 
+#so we can see the precise nature of the sequence bias for each PE/strand combination
+    awk '{$2 = $2 - 16; print}' ${name}_plus_no_shift.oneentry.bed | \
+       awk '{OFS="\t";} {$3 = $2 + 33; print}' | grep -v - | \
+       fastaFromBed -fi hg38.fa -s -bed stdin -fo ${name}_plus_no_shift.fasta
+    awk '{$2 = $2 - 16; print}' ${name}_minus_no_shift.oneentry.bed | \
+       awk '{OFS="\t";} {$3 = $2 + 33; print}' |  grep -v - | \
+       fastaFromBed -fi hg38.fa -s -bed stdin -fo ${name}_minus_no_shift.fasta
+#need to convert to CAPS prior to reverse complement
+    awk 'BEGIN{FS=" "}{if(!/>/){print toupper($0)}else{print $1}}' ${name}_minus_no_shift.fasta | \
+        fastx_reverse_complement -o ${name}_minus_no_shift_RC.fasta
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    bigWigToBedGraph ${name}_minus_no_shift.bigWig ${name}_minus_no_shift.bedGraph
+    bigWigToBedGraph ${name}_plus_no_shift.bigWig ${name}_plus_no_shift.bedGraph
+    awk '{OFS="\t";} {print $1,$2-4,$3-4,$4}' ${name}_minus_no_shift.bedGraph | sort -k1,1 -k2,2n > ${name}_minus_shift.bedGraph
+    awk '{OFS="\t";} {print $1,$2+5,$3+5,$4}' ${name}_plus_no_shift.bedGraph | sort -k1,1 -k2,2n > ${name}_plus_shift.bedGraph
+    bedGraphToBigWig ${name}_minus_shift.bedGraph hg38.chrom.sizes ${name}_minus_shift.bigWig
+    bedGraphToBigWig ${name}_plus_shift.bedGraph hg38.chrom.sizes ${name}_plus_shift.bigWig
+done
+@ 
+ 
+\subsection{Visualizing the sequence bias in \texttt{R}}
+
+The next step is to visualize the preferred sequence of Tn5 by
+anchoring the sequence on the beginning of the trimmed read and asking
+how frequent A,C, G, and T occur at each position. The code below does
+this, but there are a few excercises that may help you understand the
+data and how to generalize a function in \texttt{R}. First, as coded
+below, which position in the PSWM corresponds to the first base of the
+trimmed FASTQ file? Is this the same for PE and strand status? Second,
+this function is hard coded for a 20mer, but can you try to change it
+to accept and FASTA file with a constant number of bases per sequence
+entry? Then expand it to 40+ bases. I woudl hope that the IC as you
+get further away from the cut site shoudl diminsh to zero. Third, I run the same process four times, which probably means
+I should make the process a function and simply call the function four
+times. I realize that the minus strand reads shoudl be reverse
+complemented. In teh function you can include a rc = FALSE, option,
+then a conditional: if rc == TRUE, then reverse complement to motif. Can you try to do this?
+I understand that this is a lot, but I will be coding it up in
+parallel, if you need help.
+
+<<R_code_functions, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize" >>=
+
+source('https://raw.githubusercontent.com/guertinlab/seqOutBias/master/docs/R/seqOutBias_functions.R')
+library(ggseqlogo)
+
+pswm.func.2 <- function(x.ligation, out = 'outfilename') {
+    a = lapply(strsplit(as.character(x.ligation), ''), "[", 1)
+    b = lapply(strsplit(as.character(x.ligation), ''), "[", 2)
+    c = lapply(strsplit(as.character(x.ligation), ''), "[", 3)
+    d = lapply(strsplit(as.character(x.ligation), ''), "[", 4)
+    e = lapply(strsplit(as.character(x.ligation), ''), "[", 5)
+    f = lapply(strsplit(as.character(x.ligation), ''), "[", 6)
+    g = lapply(strsplit(as.character(x.ligation), ''), "[", 7)
+    h = lapply(strsplit(as.character(x.ligation), ''), "[", 8)
+    i = lapply(strsplit(as.character(x.ligation), ''), "[", 9)
+    j = lapply(strsplit(as.character(x.ligation), ''), "[", 10)
+    k = lapply(strsplit(as.character(x.ligation), ''), "[", 11)
+    l = lapply(strsplit(as.character(x.ligation), ''), "[", 12)
+    m = lapply(strsplit(as.character(x.ligation), ''), "[", 13)
+    n = lapply(strsplit(as.character(x.ligation), ''), "[", 14)
+    o = lapply(strsplit(as.character(x.ligation), ''), "[", 15)
+    p = lapply(strsplit(as.character(x.ligation), ''), "[", 16)
+    q = lapply(strsplit(as.character(x.ligation), ''), "[", 17)
+    r = lapply(strsplit(as.character(x.ligation), ''), "[", 18)
+    s = lapply(strsplit(as.character(x.ligation), ''), "[", 19)
+    t = lapply(strsplit(as.character(x.ligation), ''), "[", 20)
+    u = lapply(strsplit(as.character(x.ligation), ''), "[", 21)
+    v = lapply(strsplit(as.character(x.ligation), ''), "[", 22)
+    w = lapply(strsplit(as.character(x.ligation), ''), "[", 23)
+    x = lapply(strsplit(as.character(x.ligation), ''), "[", 24)
+    y = lapply(strsplit(as.character(x.ligation), ''), "[", 25)
+    z = lapply(strsplit(as.character(x.ligation), ''), "[", 26)
+    aa = lapply(strsplit(as.character(x.ligation), ''), "[", 27)
+    bb = lapply(strsplit(as.character(x.ligation), ''), "[", 28)
+    cc = lapply(strsplit(as.character(x.ligation), ''), "[", 29)
+    dd = lapply(strsplit(as.character(x.ligation), ''), "[", 30)    
+    ee = lapply(strsplit(as.character(x.ligation), ''), "[", 31) 
+    ff = lapply(strsplit(as.character(x.ligation), ''), "[", 32)    
+    gg = lapply(strsplit(as.character(x.ligation), ''), "[", 33) 
+    col.matrix = cbind(a,b,c,d,e,f, g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,aa,bb,cc,dd,ee,ff,gg)
+    a.nuc = sapply(1:33, function(x) sum(col.matrix[,x] == "A"))
+    t.nuc = sapply(1:33, function(x) sum(col.matrix[,x] == "T"))
+    c.nuc = sapply(1:33, function(x) sum(col.matrix[,x] == "C"))
+    g.nuc = sapply(1:33, function(x) sum(col.matrix[,x] == "G"))
+    #pswm = cbind(a.nuc*(0.25/.2), c.nuc*(0.25/.3), g.nuc*(0.25/.3), t.nuc*(0.25/.2))
+    pswm = cbind(a.nuc, c.nuc, g.nuc, t.nuc)
+    print(pswm)
+    outfile = file(paste0(out, '.txt'))
+    on.exit(close(outfile))
+    writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.20000 C 0.30000 G 0.30000 T 0.20000", paste("MOTIF", out), " ",
+                 "letter-probability matrix: alength= 4 w= 33"), outfile)
+    pswm2 = pswm/rowSums(pswm)
+    write.table(pswm2, file = paste0(out, '.txt'), append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+#the followign line can be uncommented if ceqlogo is installed and in your $PATH    
+#    system(paste('ceqlogo -i ', out, '.txt -m 1 > ', out, '.eps', sep=''))
+    return(pswm)
+}
+
+plot.seqlogo.func <- function(x, outfile = "ATAC-kmer_optimization_all_test.pdf") {
+    w =  0.663 + (ncol(x) + 1)*0.018 + (ncol(x)+2)* .336
+    pdf(outfile, useDingbats=FALSE, width=w, height=2.695)
+    print(ggseqlogo(x,  facet = "wrap", font = 'helvetica_bold'))
+    dev.off()
+}
+
+dir = paste0(path.expand("~"),'/Desktop/atac_test/')
+setwd(dir)
+
+#I am running the same scripts on four files because it was easiest to copy and paste
+#How can you clean this up by making a function and running this function on a list of input files?
+#also I am not doing rep2 here
+
+#I ran it with both of these shift statuses:
+#shift.status = 'shift_counts'
+shift.status = 'no_shift'
+
+
+plusATAC = read.table('C1_gDNA_rep1_plus_no_shift.fasta', 
+                          comment.char = '>')
+plusATAC[,1] = as.character(plusATAC[,1])
+plusATAC = data.frame(lapply(plusATAC, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+minusATAC = read.table('C1_gDNA_rep1_minus_no_shift_RC.fasta', 
+                           comment.char = '>')
+minusATAC[,1] = as.character(minusATAC[,1])
+minusATAC = data.frame(lapply(minusATAC, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+#NEED TO DO FOR REP2
+
+nrow(plusATAC)
+pswm.atac.plus.1 = pswm.func.2(plusATAC[1:3000000,1], 'ATAC_bias_plus')
+pswm.atac.plus.2 = pswm.func.2(plusATAC[3000001:6000000,1], 'ATAC_bias_plus')
+pswm.atac.plus.3 = pswm.func.2(plusATAC[6000001:nrow(plusATAC),1], 'ATAC_bias_plus')
+
+
+pswm.atac.plus = pswm.atac.plus.1 + pswm.atac.plus.2 + pswm.atac.plus.3
+
+
+pswm.atac.minus.1 = pswm.func.2(minusATAC[1:3000000,1], 'ATAC_bias_minus')
+pswm.atac.minus.2 = pswm.func.2(minusATAC[3000001:6000000,1], 'ATAC_bias_minus')
+pswm.atac.minus.3 = pswm.func.2(minusATAC[6000001:nrow(minusATAC),1], 'ATAC_bias_minus')
+
+
+pswm.atac.minus = pswm.atac.minus.1 + pswm.atac.minus.2 + pswm.atac.minus.3
+
+save(pswm.atac.plus, pswm.atac.minus, file = '210101_pswm.atac.Rdata')
+
+pswm.atac.minus = pswm.atac.minus / rowSums(pswm.atac.minus)
+pswm.atac.minus.trans = t(pswm.atac.minus)
+rownames(pswm.atac.minus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.atac.minus.trans, outfile='atac_seq_minus_pswm_trans.pdf')
+
+
+
+pswm.atac.plus = pswm.atac.plus / rowSums(pswm.atac.plus)
+pswm.atac.plus.trans = t(pswm.atac.plus)
+rownames(pswm.atac.plus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.atac.plus.trans, outfile='atac_seq_plus_pswm_trans.pdf')
+
+load('210101_pswm.atac.Rdata')
+
+#STOP HERE
+#this PSWM needs to BE SHIFTED
+
+
+all.atac.seq.pswm = pswm.atac.plus + pswm.atac.minus
+all.atac.seq.pswm = all.atac.seq.pswm[c(10:32),]
+all.atac.seq.pswm = all.atac.seq.pswm / rowSums(all.atac.seq.pswm)
+
+outfile = file('all.atac.seq.pswm.txt')
+writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.30000 C 0.20000 G 0.20000 T 0.30000", paste("MOTIF", "all_Tn5"), " ",#this is correct 0.3 for A and T
+                 "letter-probability matrix: alength= 4 w= 23"), outfile)
+    #pswm = pswm/rowSums(pswm)
+write.table(all.atac.seq.pswm, file = 'all.atac.seq.pswm.txt', append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+close(outfile)
+
+all.atac.seq.pswm.trans = t(all.atac.seq.pswm)
+rownames(all.atac.seq.pswm.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(all.atac.seq.pswm.trans, outfile='ATAC_bias_all.pdf')
+
+
+
+info.content <- function(ppm) {
+    x = -sum(ppm * log2(ppm), na.rm = TRUE)
+    return(x)
+} 
+
+all.atac.seq.pswm[] = vapply(all.atac.seq.pswm, info.content, numeric(1))
+
+ic.position = 2 - rowSums(all.atac.seq.pswm)
+
+sum(ic.position[1:11])
+sum(ic.position[13:23])
+
+
+pdf('informationcontent_Tn5.pdf', width=3.43, height = 3.43)
+plot(ic.position[1:11] - rev(ic.position[13:23]), 
+     xlab = 'position relative to central Tn5 site',
+     ylab = 'upstream IC - downstream IC', pch = 16)
+abline(h = 0, lty = 2)
+dev.off()
+
+
+
+@ 
+
+<<shell_fimo_atac_tn5, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh'>>=
+
+
+fimo --thresh 0.00005 --text all.atac.seq.pswm.txt hg38.fa > all_atac_seq_pswm_00005_fimo.txt
+
+
+fimo --thresh 0.0001 --text all.atac.seq.pswm.minus_central_3mer.txt hg38.fa > all_atac_seq_pswm_minus_central_3mer_0001_fimo.txt
+@ 
+
+
+
+<<R_code_functions_post_fimo, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize" >>=
+####just the plus and minus
+
+##################count 3mers for all Tn5 insertions
+##not currently using this data
+
+x.1 = lapply(strsplit(as.character(rbind(plusATAC, minusATAC)[,1]), ''), "[", 20)
+x.2 = lapply(strsplit(as.character(rbind(plusATAC, minusATAC)[,1]), ''), "[", 21)
+x.3 = lapply(strsplit(as.character(rbind(plusATAC, minusATAC)[,1]), ''), "[", 22)
+
+central.3mer = cbind(x.1, x.2, x.3)
+central.3mer.df = apply(central.3mer, 1 , paste, collapse = "")
+
+
+#generate all 3mers
+all.64 = expand.grid(rep(list(c('A','C','G','T')), 3))
+
+all.64.df = data.frame(apply(all.64, 1 , paste, collapse = ""))
+
+for (i in 1:64) {
+    all.64.df[i,2] = length(central.3mer.df[central.3mer.df == all.64.df[i,1]])    
+}
+
+all.64.df = all.64.df[order(all.64.df[,1]),]
+all.64.df[,3] = 1:64
+
+
+rev.df = data.frame(as.character(all.64.df[,1]))
+rev.df[] = apply(rev.df, 1, revcomp)
+rev.df[,2] = 1:64
+colnames(rev.df)= c('rc', 'indexrc')
+
+colnames(all.64.df) = c('three_mer', 'number', 'index')
+
+all.64.df.rc = merge(all.64.df, rev.df, by.x = 'three_mer', by.y = 'rc')
+write.table(all.64.df.rc, file = 'all_64_df.txt', quote=FALSE, row.names =FALSE, col.names = FALSE, sep = '\t')
+
+
+###PSWM for just those goingin Tn5 seqLogo
+
+#continue from here
+
+fimo.all.tn5 = read.table('all_atac_seq_pswm_00005_fimo.txt', 
+                         skip = 1)
+fimo.all.tn5.plus = data.frame(fimo.all.tn5[fimo.all.tn5[,5] == '+', 8])
+fimo.all.tn5.minus = data.frame(fimo.all.tn5[fimo.all.tn5[,5] == '-', 8])
+
+fimo.all.tn5.plus[,1] = as.character(fimo.all.tn5.plus[,1])
+fimo.all.tn5.plus = data.frame(lapply(fimo.all.tn5.plus, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+fimo.all.tn5.minus[,1] = as.character(fimo.all.tn5.minus[,1])
+fimo.all.tn5.minus = data.frame(lapply(fimo.all.tn5.minus, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+
+plus.11 = lapply(strsplit(as.character(fimo.all.tn5.plus[,1]), ''), "[", 11)
+plus.12 = lapply(strsplit(as.character(fimo.all.tn5.plus[,1]), ''), "[", 12)
+plus.13 = lapply(strsplit(as.character(fimo.all.tn5.plus[,1]), ''), "[", 13)
+
+plus.3mer = cbind(plus.11 , plus.12, plus.13)
+plus.3mer.df = apply(plus.3mer, 1 , paste, collapse = "")
+
+
+plus.64 = expand.grid(rep(list(c('A','C','G','T')), 3))
+plus.64.df = data.frame(apply(plus.64, 1 , paste, collapse = ""))
+
+for (i in 1:64) {
+    plus.64.df[i,2] = length(plus.3mer.df[plus.3mer.df == plus.64.df[i,1]])    
+}
+
+plus.64.df = plus.64.df[order(plus.64.df[,1]),]
+plus.64.df[,3] = 1:64
+
+
+rev.df = data.frame(as.character(plus.64.df[,1]))
+rev.df[] = apply(rev.df, 1, revcomp)
+rev.df[,2] = 1:64
+colnames(rev.df)= c('rc', 'indexrc')
+
+colnames(plus.64.df) = c('three_mer', 'number', 'index')
+
+plus.64.df.rc = merge(plus.64.df, rev.df, by.x = 'three_mer', by.y = 'rc')
+
+
+minus.11 = lapply(strsplit(as.character(fimo.all.tn5.minus[,1]), ''), "[", 11)
+minus.12 = lapply(strsplit(as.character(fimo.all.tn5.minus[,1]), ''), "[", 12)
+minus.13 = lapply(strsplit(as.character(fimo.all.tn5.minus[,1]), ''), "[", 13)
+
+minus.3mer = cbind(minus.11, minus.12, minus.13)
+minus.3mer.df = apply(minus.3mer, 1 , paste, collapse = "")
+
+#plus.all.64.df = all.64.df
+#minus.all.64.df = all.64.df
+
+minus.64 = expand.grid(rep(list(c('A','C','G','T')), 3))
+minus.64.df = data.frame(apply(minus.64, 1 , paste, collapse = ""))
+
+for (i in 1:64) {
+    minus.64.df[i,2] = length(minus.3mer.df[minus.3mer.df == minus.64.df[i,1]])    
+}
+
+minus.64.df = minus.64.df[order(minus.64.df[,1]),]
+minus.64.df[,3] = 1:64
+
+minus.64.df = minus.64.df[order(minus.64.df[,1]),]
+
+#write.table(plus.all.64.df, file = 'plus_all_64_df.txt', quote=FALSE, row.names =FALSE, col.names = FALSE, sep = '\t')
+
+
+colnames(minus.64.df) = c('three_mer', 'number', 'index')
+
+minus.64.df.rc = merge(minus.64.df, rev.df, by.x = 'three_mer', by.y = 'rc')
+
+
+counts.each = merge(plus.64.df.rc, minus.64.df.rc, by = 'three_mer')[,c(1:5)]
+
+colnames(counts.each) = c('three_mer', 'pluscount', 'plusindex',  'minusindex', 'minuscount')
+
+counts.each = counts.each[,c(1,3,2,4,5)]
+
+write.table(counts.each, file = 'Tn5_pswm_64_df.txt', quote=FALSE, row.names =FALSE, col.names = FALSE, sep = '\t')
+
+
+##################DNase, Cyanase, Benzonase
+
+
+pswm.func.3 <- function(x.ligation, out = 'outfilename') {
+    a = lapply(strsplit(as.character(x.ligation), ''), "[", 1)
+    b = lapply(strsplit(as.character(x.ligation), ''), "[", 2)
+    c = lapply(strsplit(as.character(x.ligation), ''), "[", 3)
+    d = lapply(strsplit(as.character(x.ligation), ''), "[", 4)
+    e = lapply(strsplit(as.character(x.ligation), ''), "[", 5)
+    f = lapply(strsplit(as.character(x.ligation), ''), "[", 6)
+    g = lapply(strsplit(as.character(x.ligation), ''), "[", 7)
+    h = lapply(strsplit(as.character(x.ligation), ''), "[", 8)
+    i = lapply(strsplit(as.character(x.ligation), ''), "[", 9)
+    j = lapply(strsplit(as.character(x.ligation), ''), "[", 10)
+    k = lapply(strsplit(as.character(x.ligation), ''), "[", 11)
+    l = lapply(strsplit(as.character(x.ligation), ''), "[", 12)
+    m = lapply(strsplit(as.character(x.ligation), ''), "[", 13)
+    n = lapply(strsplit(as.character(x.ligation), ''), "[", 14)
+    o = lapply(strsplit(as.character(x.ligation), ''), "[", 15)
+    p = lapply(strsplit(as.character(x.ligation), ''), "[", 16)
+    q = lapply(strsplit(as.character(x.ligation), ''), "[", 17)
+    r = lapply(strsplit(as.character(x.ligation), ''), "[", 18)
+    s = lapply(strsplit(as.character(x.ligation), ''), "[", 19)
+    t = lapply(strsplit(as.character(x.ligation), ''), "[", 20)
+    u = lapply(strsplit(as.character(x.ligation), ''), "[", 21)
+    col.matrix = cbind(a,b,c,d,e,f, g,h,i,j,k,l,m,n,o,p,q,r,s,t,u)
+    a.nuc = sapply(1:21, function(x) sum(col.matrix[,x] == "A"))
+    t.nuc = sapply(1:21, function(x) sum(col.matrix[,x] == "T"))
+    c.nuc = sapply(1:21, function(x) sum(col.matrix[,x] == "C"))
+    g.nuc = sapply(1:21, function(x) sum(col.matrix[,x] == "G"))
+    #pswm = cbind(a.nuc*(0.25/.2), c.nuc*(0.25/.3), g.nuc*(0.25/.3), t.nuc*(0.25/.2))
+    pswm = cbind(a.nuc, c.nuc, g.nuc, t.nuc)
+    print(pswm)
+    outfile = file(paste0(out, '.txt'))
+    on.exit(close(outfile))
+    writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.20000 C 0.30000 G 0.30000 T 0.20000", paste("MOTIF", out), " ",
+                 "letter-probability matrix: alength= 4 w= 21"), outfile)
+    pswm2 = pswm/rowSums(pswm)
+    write.table(pswm2, file = paste0(out, '.txt'), append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+#the followign line can be uncommented if ceqlogo is installed and in your $PATH    
+#    system(paste('ceqlogo -i ', out, '.txt -m 1 > ', out, '.eps', sep=''))
+    return(pswm)
+}
+
+#start here. break up the file though.
+
+#DNase plus
+plusDNase = read.table('mm10_liver_DNase_plus.fasta', 
+                          comment.char = '>')
+plusDNase[,1] = as.character(plusDNase[,1])
+plusDNase = data.frame(lapply(plusDNase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+nrow(plusDNase)
+pswm.dnase.plus.1 = pswm.func.3(plusDNase[1:10000000,1], 'DNase_bias_plus')
+pswm.dnase.plus.2 = pswm.func.3(plusDNase[10000001:20000000,1], 'DNase_bias_plus')
+pswm.dnase.plus.3 = pswm.func.3(plusDNase[20000001:nrow(plusDNase),1], 'DNase_bias_plus')
+
+pswm.dnase.plus = pswm.dnase.plus.1 + pswm.dnase.plus.2 + pswm.dnase.plus.3
+
+
+pswm.dnase.plus = pswm.dnase.plus / rowSums(pswm.dnase.plus)
+pswm.dnase.plus.trans = t(pswm.dnase.plus)
+rownames(pswm.dnase.plus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.dnase.plus.trans, outfile='dnase_seq_plus_pswm_trans.pdf')
+
+#DNase minus
+minusDNase = read.table('mm10_liver_DNase_minus_RC.fasta', 
+                           comment.char = '>')
+minusDNase[,1] = as.character(minusDNase[,1])
+minusDNase = data.frame(lapply(minusDNase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+pswm.dnase.minus.1 = pswm.func.3(minusDNase[1:10000000,1], 'DNase_bias_minus')
+pswm.dnase.minus.2 = pswm.func.3(minusDNase[10000001:20000000,1], 'DNase_bias_minus')
+pswm.dnase.minus.3 = pswm.func.3(minusDNase[20000001:nrow(minusDNase),1], 'DNase_bias_minus')
+
+pswm.dnase.minus = pswm.dnase.minus.1 + pswm.dnase.minus.2 + pswm.dnase.minus.3
+
+save(pswm.dnase.plus, pswm.dnase.minus, file = '201229_pswm.dnase.Rdata')
+
+pswm.dnase.minus = pswm.dnase.minus / rowSums(pswm.dnase.minus)
+pswm.dnase.minus.trans = t(pswm.dnase.minus)
+rownames(pswm.dnase.minus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.dnase.minus.trans, outfile='dnase_seq_minus_pswm_trans.pdf')
+
+#want to save raw counts
+pswm.dnase.plus = pswm.dnase.plus.1 + pswm.dnase.plus.2 + pswm.dnase.plus.3
+pswm.dnase.minus = pswm.dnase.minus.1 + pswm.dnase.minus.2 + pswm.dnase.minus.3
+save(pswm.dnase.plus, pswm.dnase.minus, file = '201229_pswm.dnase.Rdata')
+
+all.dnase.seq.pswm = pswm.dnase.minus[2:21,] + pswm.dnase.plus[1:20,]
+all.dnase.seq.pswm = all.dnase.seq.pswm / rowSums(all.dnase.seq.pswm)
+
+outfile = file('all.dnase.seq.pswm.txt')
+writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.30000 C 0.20000 G 0.20000 T 0.30000", paste("MOTIF", "all_DNase"), " ",#this is correct 0.3 for A and T
+                 "letter-probability matrix: alength= 4 w= 20"), outfile)
+    #pswm = pswm/rowSums(pswm)
+write.table(all.dnase.seq.pswm, file = 'all.dnase.seq.pswm.txt', append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+close(outfile)
+
+all.dnase.seq.pswm.trans = t(all.dnase.seq.pswm)
+rownames(all.dnase.seq.pswm.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(all.dnase.seq.pswm.trans, outfile='DNASE_bias_all.pdf')
+
+
+
+#Cyanase plus
+plusCyanase = read.table('mm10_liver_Cyanase_plus.fasta', 
+                          comment.char = '>')
+
+plusCyanase[,1] = as.character(plusCyanase[,1])
+plusCyanase = data.frame(lapply(plusCyanase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+nrow(plusCyanase)
+pswm.cyanase.plus.1 = pswm.func.3(plusCyanase[1:10000000,1], 'Cyanase_bias_plus')
+pswm.cyanase.plus.2 = pswm.func.3(plusCyanase[10000001:20000000,1], 'Cyanase_bias_plus')
+pswm.cyanase.plus.3 = pswm.func.3(plusCyanase[20000001:30000000,1], 'Cyanase_bias_plus')
+pswm.cyanase.plus.4 = pswm.func.3(plusCyanase[30000001:40000000,1], 'Cyanase_bias_plus')
+pswm.cyanase.plus.5 = pswm.func.3(plusCyanase[40000001:nrow(plusCyanase),1], 'Cyanase_bias_plus')
+
+pswm.cyanase.plus = pswm.cyanase.plus.1 + pswm.cyanase.plus.2 + 
+    pswm.cyanase.plus.3 + pswm.cyanase.plus.4 + pswm.cyanase.plus.5
+
+pswm.cyanase.plus = pswm.cyanase.plus / rowSums(pswm.cyanase.plus)
+pswm.cyanase.plus.trans = t(pswm.cyanase.plus)
+rownames(pswm.cyanase.plus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.cyanase.plus.trans, outfile='cyanase_seq_plus_pswm_trans.pdf')
+
+
+#Cyanase minus
+minusCyanase = read.table('mm10_liver_Cyanase_minus_RC.fasta', 
+                           comment.char = '>')
+minusCyanase[,1] = as.character(minusCyanase[,1])
+minusCyanase = data.frame(lapply(minusCyanase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+nrow(minusCyanase)
+pswm.cyanase.minus.1 = pswm.func.3(minusCyanase[1:10000000,1], 'Cyanase_bias_minus')
+pswm.cyanase.minus.2 = pswm.func.3(minusCyanase[10000001:20000000,1], 'Cyanase_bias_minus')
+pswm.cyanase.minus.3 = pswm.func.3(minusCyanase[20000001:30000000,1], 'Cyanase_bias_minus')
+pswm.cyanase.minus.4 = pswm.func.3(minusCyanase[30000001:40000000,1], 'Cyanase_bias_minus')
+pswm.cyanase.minus.5 = pswm.func.3(minusCyanase[40000001:nrow(minusCyanase),1], 'Cyanase_bias_minus')
+
+pswm.cyanase.minus = pswm.cyanase.minus.1 + pswm.cyanase.minus.2 + 
+    pswm.cyanase.minus.3 + pswm.cyanase.minus.4 + pswm.cyanase.minus.5
+
+
+pswm.cyanase.minus = pswm.cyanase.minus / rowSums(pswm.cyanase.minus)
+pswm.cyanase.minus.trans = t(pswm.cyanase.minus)
+rownames(pswm.cyanase.minus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.cyanase.minus.trans, outfile='cyanase_seq_minus_pswm_trans.pdf')
+
+pswm.cyanase.plus = pswm.cyanase.plus.1 + pswm.cyanase.plus.2 + 
+    pswm.cyanase.plus.3 + pswm.cyanase.plus.4 + pswm.cyanase.plus.5
+pswm.cyanase.minus = pswm.cyanase.minus.1 + pswm.cyanase.minus.2 + 
+    pswm.cyanase.minus.3 + pswm.cyanase.minus.4 + pswm.cyanase.minus.5
+save(pswm.cyanase.plus, pswm.cyanase.minus, file = '201229_pswm.cyanase.Rdata')
+
+#load('201229_pswm.cyanase.Rdata')
+
+all.cyanase.seq.pswm = pswm.cyanase.minus[2:21,] + pswm.cyanase.plus[1:20,]
+all.cyanase.seq.pswm = all.cyanase.seq.pswm / rowSums(all.cyanase.seq.pswm)
+
+outfile = file('all.cyanase.seq.pswm.txt')
+writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.30000 C 0.20000 G 0.20000 T 0.30000", paste("MOTIF", "all_Cyanase"), " ",#this is correct 0.3 for A and T
+                 "letter-probability matrix: alength= 4 w= 20"), outfile)
+    #pswm = pswm/rowSums(pswm)
+write.table(all.cyanase.seq.pswm, file = 'all.cyanase.seq.pswm.txt', append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+close(outfile)
+
+all.cyanase.seq.pswm.trans = t(all.cyanase.seq.pswm)
+rownames(all.cyanase.seq.pswm.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(all.cyanase.seq.pswm.trans, outfile='CYANASE_bias_all.pdf')
+
+
+
+#Benzonase plus
+plusBenzonase = read.table('mm10_liver_Benzonase_plus.fasta', 
+                          comment.char = '>')
+plusBenzonase[,1] = as.character(plusBenzonase[,1])
+plusBenzonase = data.frame(lapply(plusBenzonase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+nrow(plusBenzonase)
+pswm.benzonase.plus.1 = pswm.func.3(plusBenzonase[1:10000000,1], 'Benzonase_bias_plus')
+pswm.benzonase.plus.2 = pswm.func.3(plusBenzonase[10000001:20000000,1], 'Benzonase_bias_plus')
+pswm.benzonase.plus.3 = pswm.func.3(plusBenzonase[20000001:30000000,1], 'Benzonase_bias_plus')
+pswm.benzonase.plus.4 = pswm.func.3(plusBenzonase[30000001:40000000,1], 'Benzonase_bias_plus')
+pswm.benzonase.plus.5 = pswm.func.3(plusBenzonase[40000001:nrow(plusBenzonase),1], 'Benzonase_bias_plus')
+
+pswm.benzonase.plus = pswm.benzonase.plus.1 + pswm.benzonase.plus.2 + 
+    pswm.benzonase.plus.3 + pswm.benzonase.plus.4 + pswm.benzonase.plus.5
+
+pswm.benzonase.plus = pswm.benzonase.plus / rowSums(pswm.benzonase.plus)
+pswm.benzonase.plus.trans = t(pswm.benzonase.plus)
+rownames(pswm.benzonase.plus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.benzonase.plus.trans, outfile='benzonase_seq_plus_pswm_trans.pdf')
+
+
+
+#Benzonase minus
+minusBenzonase = read.table('mm10_liver_Benzonase_minus_RC.fasta', 
+                           comment.char = '>')
+minusBenzonase[,1] = as.character(minusBenzonase[,1])
+minusBenzonase = data.frame(lapply(minusBenzonase, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+nrow(minusBenzonase)
+pswm.benzonase.minus.1 = pswm.func.3(minusBenzonase[1:10000000,1], 'Benzonase_bias_minus')
+pswm.benzonase.minus.2 = pswm.func.3(minusBenzonase[10000001:20000000,1], 'Benzonase_bias_minus')
+pswm.benzonase.minus.3 = pswm.func.3(minusBenzonase[20000001:30000000,1], 'Benzonase_bias_minus')
+pswm.benzonase.minus.4 = pswm.func.3(minusBenzonase[30000001:40000000,1], 'Benzonase_bias_minus')
+pswm.benzonase.minus.5 = pswm.func.3(minusBenzonase[40000001:nrow(minusBenzonase),1], 'Benzonase_bias_minus')
+
+pswm.benzonase.minus = pswm.benzonase.minus.1 + pswm.benzonase.minus.2 + 
+    pswm.benzonase.minus.3 + pswm.benzonase.minus.4 + pswm.benzonase.minus.5
+
+
+pswm.benzonase.minus = pswm.benzonase.minus / rowSums(pswm.benzonase.minus)
+pswm.benzonase.minus.trans = t(pswm.benzonase.minus)
+rownames(pswm.benzonase.minus.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.benzonase.minus.trans, outfile='benzonase_seq_minus_pswm_trans.pdf')
+
+pswm.benzonase.plus = pswm.benzonase.plus.1 + pswm.benzonase.plus.2 + 
+    pswm.benzonase.plus.3 + pswm.benzonase.plus.4 + pswm.benzonase.plus.5
+pswm.benzonase.minus = pswm.benzonase.minus.1 + pswm.benzonase.minus.2 + 
+    pswm.benzonase.minus.3 + pswm.benzonase.minus.4 + pswm.benzonase.minus.5
+save(pswm.benzonase.plus, pswm.benzonase.minus, file = '201229_pswm.benzonase.Rdata')
+
+#load('201229_pswm.benzonase.Rdata')
+
+all.benzonase.seq.pswm = pswm.benzonase.minus[2:21,] + pswm.benzonase.plus[1:20,]
+all.benzonase.seq.pswm = all.benzonase.seq.pswm / rowSums(all.benzonase.seq.pswm)
+
+outfile = file('all.benzonase.seq.pswm.txt')
+writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.30000 C 0.20000 G 0.20000 T 0.30000", paste("MOTIF", "all_Benzonase"), " ",#this is correct 0.3 for A and T
+                 "letter-probability matrix: alength= 4 w= 20"), outfile)
+    #pswm = pswm/rowSums(pswm)
+write.table(all.benzonase.seq.pswm, file = 'all.benzonase.seq.pswm.txt', append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+close(outfile)
+
+all.benzonase.seq.pswm.trans = t(all.benzonase.seq.pswm)
+rownames(all.benzonase.seq.pswm.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(all.benzonase.seq.pswm.trans, outfile='BENZONASE_bias_all.pdf')
+
+
+
+
+@ 
+
+\noindent I had an idea that we did not implement in the \texttt{seqOutBias}
+paper, we can optimize the mask at sites that most strongly conform to
+the Tn5 bias. This finds those sites in the genome. The rationale is
+that the bias will be extreme at these sites, so the most appropriate
+k-mer mask sites will be revealed. The later code is designed to use
+20 PSWMs, but we should alter to code to run only on sites containing
+the sites that conform best to the Tn5 preferred site.
+
+<<shell_fimo_ases_2, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh'>>=
+
+#fimo --thresh 0.00005 --text ATAC_bias_pe1_minus.txt hg38.fa > ATAC_bias_pe1_minus_00005_fimo.txt
+#fimo --thresh 0.00005 --text ATAC_bias_pe1_plus.txt hg38.fa > ATAC_bias_pe1_plus_00005_fimo.txt
+#fimo --thresh 0.00005 --text ATAC_bias_pe2_minus.txt hg38.fa > ATAC_bias_pe2_minus_00005_fimo.txt
+#fimo --thresh 0.00005 --text ATAC_bias_pe2_plus.txt hg38.fa > ATAC_bias_pe2_plus_00005_fimo.txt
+
+#fimo --thresh 0.00005 --text all.atac.seq.pswm.txt hg38.fa > all_atac_seq_pswm_00005_fimo.txt
+fimo --thresh 0.0001 --text all.dnase.seq.pswm.txt /Volumes/GUERTIN_2/adipogenesis/atac/mm10.fa > all_dnase_seq_pswm_0001_fimo.txt
+fimo --thresh 0.00007 --text all.cyanase.seq.pswm.txt /Volumes/GUERTIN_2/adipogenesis/atac/mm10.fa > all_cyanase_seq_pswm_00007_fimo.txt
+fimo --thresh 0.00005 --text all.benzonase.seq.pswm.txt /Volumes/GUERTIN_2/adipogenesis/atac/mm10.fa > all_benzonase_seq_pswm_00005_fimo.txt
+
+fimo --thresh 0.00005 --text all.dnase.seq.pswm.odd.txt /Volumes/GUERTIN_2/adipogenesis/atac/mm10.fa > all_dnase_seq_pswm_00005_fimo_odd.txt
+
+@ 
+
+This next chunk pulls random three-mers from the genome that are
+representative of the three-mers found in the full Tn5 bias
+composites. This tests whether the three-mer is sufficient to direct 5
+base spaced insertions
+
+<<shell_ucsc_scaled_2, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh'>>=
+seqOutBias seqtable hg38.fa --kmer-size=3 --plus-offset=3 --minus-offset=3 --read-size=30 --out=hg38.3.3.3.tbl
+seqOutBias dump hg38.3.3.3.tbl > hg38.3.3.3.dump.txt
+
+mkdir seqdump
+mv hg38.3.3.3.dump.txt seqdump
+mv all_64_df.txt seqdump
+
+cd seqdump 
+wget https://raw.githubusercontent.com/guertinlab/Tn5bias/master/dump_to_kmer_bed.py
+
+#these don't need to be split up
+#while read line; do
+#    mer=$(echo $line | awk -F" " '{print $1}')
+#    num=$(echo $line | awk -F" " '{print $2}')
+#    idx=$(echo $line | awk -F" " '{print $3}')
+#    rcidx=$(echo $line | awk -F" " '{print $4}')
+#    echo $mer
+#    echo $num
+#    echo $idx
+#    echo $rcidx
+#    python dump_to_kmer_bed.py -i hg38.3.3.3.dump.txt -p $idx -m $rcidx
+done <all_64_df.txt
+
+
+
+while read line; do
+    plusidx=$(echo $line | awk -F" " '{print $2}')
+    plusnum=$(echo $line | awk -F" " '{print $3}')
+    minusidx=$(echo $line | awk -F" " '{print $4}')
+    minusnum=$(echo $line | awk -F" " '{print $5}')
+    echo $plusidx
+    echo $plusnum
+    echo $minusidx
+    echo $minusnum
+    #python dump_to_kmer_bed.py -i hg38.3.3.3.dump.txt -p $plusidx -m $minusidx
+    grep -v '_' hg38.3.3.3plus.${plusidx}.bed | perl -MList::Util=shuffle -e 'print shuffle(<STDIN>);' | head -${plusnum} > hg38.3.3.3plus.${plusidx}.${plusnum}.bed
+    grep -v '_' hg38.3.3.3minus.${minusidx}.bed | perl -MList::Util=shuffle -e 'print shuffle(<STDIN>);' | head -${minusnum} > hg38.3.3.3minus.${minusidx}.${minusnum}.bed
+    gzip hg38.3.3.3plus.${plusidx}.${plusnum}.bed
+    gzip hg38.3.3.3minus.${minusidx}.${minusnum}.bed
+done <Tn5_pswm_64_df.txt
+
+fastaFromBed -fi ../hg38.fa -s -bed hg38.3.3.3plus.3.1287.bed -fo hg38.3.3.3plus.3.1287.fasta
+fastaFromBed -fi ../hg38.fa -s -bed hg38.3.3.3minus.32.1274.bed -fo hg38.3.3.3minus.32.1274.fasta
+
+rm *.0.bed.gz
+
+cat hg38.3.3.3plus.*.*.bed.gz > hg38.3.3.3plus.bed.gz
+cat hg38.3.3.3minus.*.*.bed.gz > hg38.3.3.3minus.bed.gz
+
+#strugglign here to get the exact relative coordinate the same as fimo output
+gzcat hg38.3.3.3plus.bed.gz | awk '{OFS="\t";} {print $1,$2+1,$3+1,$4,$5,$6}' | gzip > hg38.3.3.3plus_shifted.bed.gz
+#shift so compatible with FIMO output
+cat hg38.3.3.3plus_shifted.bed.gz hg38.3.3.3minus.bed.gz | gzcat | awk '{OFS="\t";} {print $1,$1,$2,$3,$6,$6,$6,$6}' | sort -k1,1 -k2,2n > hg38.3.3.3plus_representative.bed
+#use these for composites
+#bigWigMerge C1_gDNA_rep1_PE1_plus.bigWig C1_gDNA_rep1_PE2_plus.bigWig C1_gDNA_rep1_plus_merged.bedGraph
+#bigWigMerge C1_gDNA_rep1_PE1_minus.bigWig C1_gDNA_rep1_PE2_minus.bigWig C1_gDNA_rep1_minus_merged.bedGraph
+#sortBed -i C1_gDNA_rep1_plus_merged.bedGraph > C1_gDNA_rep1_plus_merged.sorted.bedGraph
+#sortBed -i C1_gDNA_rep1_minus_merged.bedGraph > C1_gDNA_rep1_minus_merged.sorted.bedGraph
+#bedGraphToBigWig C1_gDNA_rep1_minus_merged.sorted.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes C1_gDNA_rep1_minus_merged.bigWig
+#bedGraphToBigWig C1_gDNA_rep1_plus_merged.sorted.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes C1_gDNA_rep1_plus_merged.bigWig
+
+awk '{OFS="\t";} {print $1,$2-4,$3-4,$4,$5}' C1_gDNA_rep1_minus_no_shift.bed > C1_gDNA_rep1_minus_shifted.bed
+########
+awk '{OFS="\t";} {print $1,$2+5,$3+5,$4,$5}' C1_gDNA_rep1_plus_no_shift.bed > C1_gDNA_rep1_plus_shifted.bed
+gzcat hg38.3.3.3plus.bed.gz | awk '{OFS="\t";} {print $1,$2+2,$3,$4,$5,$6}' > hg38.3.3.3.plus_central.bed
+intersectBed -wb -a hg38.3.3.3.plus_central.bed -b C1_gDNA_rep1_plus_shifted.bed | awk '{OFS="\t";} {print $7,$8,$9,$10,$11}'> C1_gDNA_rep1_plus_shifted_overlap.bed
+python bedToOneEntryBed.py -i C1_gDNA_rep1_plus_shifted_overlap.bed
+awk '{OFS="\t";} {print $1,$2-2,$3,$4,$5}' C1_gDNA_rep1_plus_shifted_overlap.oneentry.bed >  C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted.bed
+fastaFromBed -fi hg38.fa -s -bed C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted.bed -fo C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted.fasta
+
+# -20  -19  -18  -17  -16  -15  -14  -13  -12  -11  -10   -9   -8   -7   -6   -5   -4   -3   -2   -1    0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19   20 
+#1495 1427 1429 1483 1426 1519 1418 1449 1485 1479 1908 1395 1187 1549 1200 3314  622 1037  961 1172 3764 1172  965 1117  483 3900  990 1587 1209 1459 2067 1429 1437 1467 1369 1376 1370 1447 1440 1387 1402 
+
+#above specifies the central 0 position
+gzcat hg38.3.3.3plus.bed.gz | awk '{OFS="\t";} {print $1,$2+7,$3+5,$4,$5,$6}' > hg38.3.3.3.plus_central_pos5.bed
+intersectBed -wb -a hg38.3.3.3.plus_central_pos5.bed -b C1_gDNA_rep1_plus_shifted.bed | awk '{OFS="\t";} {print $7,$8,$9,$10,$11}'> C1_gDNA_rep1_plus_shifted_overlap_pos5.bed
+python bedToOneEntryBed.py -i C1_gDNA_rep1_plus_shifted_overlap_pos5.bed
+awk '{OFS="\t";} {print $1,$2-2,$3,$4,$5}' C1_gDNA_rep1_plus_shifted_overlap_pos5.oneentry.bed >  C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted_pos5.bed
+fastaFromBed -fi hg38.fa -s -bed C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted_pos5.bed -fo C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted_pos5.fasta
+
+
+#this is for the input
+awk '{OFS="\t";} {print $1,$2-2,$3,$4,$5}' hg38.3.3.3.plus_central_pos5.bed > hg38.3.3.3.plus_central_pos5_input.bed
+fastaFromBed -fi hg38.fa -s -bed hg38.3.3.3.plus_central_pos5_input.bed -fo hg38.3.3.3.plus_central_pos5_input.fasta
+
+###masking XXCX  --> XXXNNNNC
+name=C1_gDNA_rep1
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXXXXXXC --bed=${name}_NNNXXXXXXXXXXC_plus.bed --bw=${name}_NNNXXXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXXXXXC --bed=${name}_NNNXXXXXXXXXC_plus.bed --bw=${name}_NNNXXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXXXXC --bed=${name}_NNNXXXXXXXXC_plus.bed --bw=${name}_NNNXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXXXC --bed=${name}_NNNXXXXXXXC_plus.bed --bw=${name}_NNNXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXXC --bed=${name}_NNNXXXXXXC_plus.bed --bw=${name}_NNNXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXXC --bed=${name}_NNNXXXXXC_plus.bed --bw=${name}_NNNXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXXC --bed=${name}_NNNXXXXC_plus.bed --bw=${name}_NNNXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXXC --bed=${name}_NNNXXXC_plus.bed --bw=${name}_NNNXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXXC --bed=${name}_NNNXXC_plus.bed --bw=${name}_NNNXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNXC --bed=${name}_NNNXC_plus.bed --bw=${name}_NNNXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNC --bed=${name}_NNNC_plus.bed --bw=${name}_NNNC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNCN --bed=${name}_NNCN_plus.bed --bw=${name}_NNCN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NCNN --bed=${name}_NCNN_plus.bed --bw=${name}_NCNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CNNN --bed=${name}_CNNN_plus.bed --bw=${name}_CNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXNNN --bed=${name}_CXNNN_plus.bed --bw=${name}_CXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXNNN --bed=${name}_CXXNNN_plus.bed --bw=${name}_CXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXNNN --bed=${name}_CXXXNNN_plus.bed --bw=${name}_CXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXNNN --bed=${name}_CXXXXNNN_plus.bed --bw=${name}_CXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXNNN --bed=${name}_CXXXXXNNN_plus.bed --bw=${name}_CXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXNNN --bed=${name}_CXXXXXXNNN_plus.bed --bw=${name}_CXXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXNNN --bed=${name}_CXXXXXXXNNN_plus.bed --bw=${name}_CXXXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXNNN --bed=${name}_CXXXXXXXXNNN_plus.bed --bw=${name}_CXXXXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXNNN --bed=${name}_CXXXXXXXXXNNN_plus.bed --bw=${name}_CXXXXXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXXNNN --bed=${name}_CXXXXXXXXXXNNN_plus.bed --bw=${name}_CXXXXXXXXXXNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXXXXXXC --bed=${name}_NNNXXXXXXXXXXC_minus.bed --bw=${name}_NNNXXXXXXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXXXXXC --bed=${name}_NNNXXXXXXXXXC_minus.bed --bw=${name}_NNNXXXXXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXXXXC --bed=${name}_NNNXXXXXXXXC_minus.bed --bw=${name}_NNNXXXXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXXXC --bed=${name}_NNNXXXXXXXC_minus.bed --bw=${name}_NNNXXXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXXC --bed=${name}_NNNXXXXXXC_minus.bed --bw=${name}_NNNXXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXXC --bed=${name}_NNNXXXXXC_minus.bed --bw=${name}_NNNXXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXXC --bed=${name}_NNNXXXXC_minus.bed --bw=${name}_NNNXXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXXC --bed=${name}_NNNXXXC_minus.bed --bw=${name}_NNNXXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXXC --bed=${name}_NNNXXC_minus.bed --bw=${name}_NNNXXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNXC --bed=${name}_NNNXC_minus.bed --bw=${name}_NNNXC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNC --bed=${name}_NNNC_minus.bed --bw=${name}_NNNC_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNCN --bed=${name}_NNCN_minus.bed --bw=${name}_NNCN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NCNN --bed=${name}_NCNN_minus.bed --bw=${name}_NCNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CNNN --bed=${name}_CNNN_minus.bed --bw=${name}_CNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXNNN --bed=${name}_CXNNN_minus.bed --bw=${name}_CXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXNNN --bed=${name}_CXXNNN_minus.bed --bw=${name}_CXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXNNN --bed=${name}_CXXXNNN_minus.bed --bw=${name}_CXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXNNN --bed=${name}_CXXXXNNN_minus.bed --bw=${name}_CXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXNNN --bed=${name}_CXXXXXNNN_minus.bed --bw=${name}_CXXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXNNN --bed=${name}_CXXXXXXNNN_minus.bed --bw=${name}_CXXXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXXNNN --bed=${name}_CXXXXXXXNNN_minus.bed --bw=${name}_CXXXXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXXXNNN --bed=${name}_CXXXXXXXXNNN_minus.bed --bw=${name}_CXXXXXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXXXXNNN --bed=${name}_CXXXXXXXXXNNN_minus.bed --bw=${name}_CXXXXXXXXXNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXXXXXNNN --bed=${name}_CXXXXXXXXXXNNN_minus.bed --bw=${name}_CXXXXXXXXXXNNN_minus.bigWig --read-size=30
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXNNNNNNN --bed=${name}_CXXXXXXNNNNNNN_minus.bed --bw=${name}_CXXXXXXNNNNNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXNNNNNNN --bed=${name}_CXXXXXXNNNNNNN_plus.bed --bw=${name}_CXXXXXXNNNNNNN_plus.bigWig --read-size=30
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXNNNNNNN --bed=${name}_CXNNNNNNN_minus.bed --bw=${name}_CXNNNNNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXNNNNNNN --bed=${name}_CXNNNNNNN_plus.bed --bw=${name}_CXNNNNNNN_plus.bigWig --read-size=30
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNNCNNN --bed=${name}_NNNNCNNN_minus.bed --bw=${name}_NNNNCNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNCNNN --bed=${name}_NNNNCNNN_plus.bed --bw=${name}_NNNNCNNN_plus.bigWig --read-size=30
+done
+
+#5mer 
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXXXXXXNNNNN --bed=${name}_CXXXXXXXNNNNN_minus.bed --bw=${name}_CXXXXXXXNNNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXNNNNN --bed=${name}_CXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXNNNNN_plus.bigWig --read-size=30
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=CXXNNNNN --bed=${name}_CXXNNNNN_minus.bed --bw=${name}_CXXNNNNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXNNNNN --bed=${name}_CXXNNNNN_plus.bed --bw=${name}_CXXNNNNN_plus.bigWig --read-size=30
+done
+
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_minus.bam --strand-specific --kmer-mask=NNNCNN --bed=${name}_NNNCNN_minus.bed --bw=${name}_NNNCNN_minus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNCNN --bed=${name}_NNNCNN_plus.bed --bw=${name}_NNNCNN_plus.bigWig --read-size=30
+done
+        
+name=C1_gDNA_rep1
+for i in C1_gDNA_rep1.bam
+do
+    name=$(echo $i | awk -F".bam" '{print $1}')
+    echo $name
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXC --bed=${name}_NNNNNXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXC --bed=${name}_NNNNNXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXC --bed=${name}_NNNNNXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXC --bed=${name}_NNNNNXXXXC_plus.bed --bw=${name}_NNNNNXXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXC --bed=${name}_NNNNNXXXC_plus.bed --bw=${name}_NNNNNXXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXC --bed=${name}_NNNNNXXC_plus.bed --bw=${name}_NNNNNXXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXC --bed=${name}_NNNNNXC_plus.bed --bw=${name}_NNNNNXC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNC --bed=${name}_NNNNNC_plus.bed --bw=${name}_NNNNNC_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNCN --bed=${name}_NNNNCN_plus.bed --bw=${name}_NNNNCN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNCNN --bed=${name}_NNNCNN_plus.bed --bw=${name}_NNNCNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNCNNN --bed=${name}_NNCNNN_plus.bed --bw=${name}_NNCNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NCNNNN --bed=${name}_NCNNNN_plus.bed --bw=${name}_NCNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CNNNNN --bed=${name}_CNNNNN_plus.bed --bw=${name}_CNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXNNNNN --bed=${name}_CXNNNNN_plus.bed --bw=${name}_CXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXNNNNN --bed=${name}_CXXNNNNN_plus.bed --bw=${name}_CXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXNNNNN --bed=${name}_CXXXNNNNN_plus.bed --bw=${name}_CXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXNNNNN --bed=${name}_CXXXXNNNNN_plus.bed --bw=${name}_CXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXNNNNN --bed=${name}_CXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXNNNNN --bed=${name}_CXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXNNNNN --bed=${name}_CXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXXXXXNNNNN_plus.bigWig --read-size=30
+    seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=CXXXXXXXXXXXXXNNNNN --bed=${name}_CXXXXXXXXXXXXXNNNNN_plus.bed --bw=${name}_CXXXXXXXXXXXXXNNNNN_plus.bigWig --read-size=30
+done
+
+
+seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXXXXXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXXXXXXXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXXXXXXXXXXXXXXXC_plus.bigWig --read-size=30
+
+seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXC_plus.bigWig --read-size=30
+
+
+for i in hg38_30*tbl
+do
+    name=$(echo $i | awk -F".tbl" '{print $1}')
+    echo $name
+    seqOutBias table $i C1_gDNA_rep1.bam > ${name}_scale_factors_ATAC.txt 
+done
+
+#current strategy: 
+#from a BED output, shift the coordinates ~100 bases and extract the FASTA sequence, then coax it into a FASTQ file. Confirm that the observed k-mer count is nearly identical. 
+#Run seqoutbias, convert the bigWIg into bedGraph, shift the count coordiantes appropriantely (~-100), and write the bedgraph file. unionBed with unscaled. 
+#import the union bed into R an calcualte teh scale factor for each position in the genome--at this point we can union bed with a real mask-scale factor for the real mask and the background mask is calcualted
+#correct the true mask by the background scale factor (how much it deviates from 1). Do this for three masks spaced 5 bases apart. Try combining these masks for corerction.
+#I beleive that the background bias was being amplified when scale factors were combined, so this may help mitagate this problem.
+
+
+
+
+
+
+
+
+#dnase
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwDnase/wgEncodeUwDnaseMcf7Est100nm1hRawDataRep1.fastq.tgz
+tar -xvf wgEncodeUwDnaseMcf7Est100nm1hRawDataRep1.fastq.tgz
+cat UwStam_MCF7_ER*fastq > MCF7_dnase.fastq
+gzip MCF7_dnase.fastq
+
+bowtie2 -p 3 --maxins 500 -x hg38 -U MCF7_dnase.fastq.gz  \
+       | samtools view -bS - | samtools sort - -o MCF7_dnase.bam
+
+samtools view -bh -F 20 MCF7_dnase.bam > MCF7_dnase_plus.bam
+samtools view -bh -f 0x10 MCF7_dnase.bam > MCF7_dnase_minus.bam
+
+seqOutBias hg38.fa MCF7_dnase_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXC --bed=MCF7_dnase_NNNNNXXXXXXXXXXC_plus.bed --bw=MCF7_dnase_NNNNNXXXXXXXXXXC_plus.bigWig --read-size=30
+seqOutBias table hg38_30.15.15.15.tbl MCF7_dnase_plus.bam > hg38_30.15.15.15.scale_factors_dnase.txt
+
+
+
+seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXXC_plus.bed --bw=${name}_NNNNNXXXXXXXXXXC_plus.bigWig --read-size=30
+
+
+#probably shoudl do it for 76 as well
+seqOutBias hg38.fa ${name}_plus.bam --strand-specific --kmer-mask=NNNNNXXXXXXXXXXC --bed=${name}_NNNNNXXXXXXXXXXC_plus_map100.bed --bw=${name}_NNNNNXXXXXXXXXXC_plus_map100.bigWig --read-size=100
+
+seqOutBias table hg38_30.15.15.15.tbl ${name}_plus.bam > hg38_30.15.15.15.scale_factors.txt
+seqOutBias table hg38_30.5.3.3.tbl ${name}_plus.bam > hg38_30.5.3.3.scale_factors.txt
+
+#lower mappability?
+seqOutBias table hg38_100.15.15.15.tbl ${name}_plus.bam > hg38_100.15.15.15.scale_factors.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#move the appropriate files to 
+# /Users/guertinlab/Desktop/atac_test/scaled_mer/
+cd /Users/guertinlab/Desktop/atac_test/scaled_mer/
+for i in *.bigWig
+do
+    name=$(echo $i | awk -F".bigWig" '{print $1}')
+    echo $name
+    bigWigToBedGraph ${name}.bigWig ${name}.bedGraph
+done
+pfiles=$(ls *plus*bedGraph)
+mfiles=$(ls *minus*bedGraph)
+
+bedtools unionbedg -i ${pfiles} > spaced_7mer_union_plus.bedGraph
+bedtools unionbedg -i ${mfiles} > spaced_7mer_union_minus.bedGraph
+
+#remove columns with zero 
+awk '!($4==0 || $5==0 || $6==0 || $7==0)' spaced_7mer_union_plus.bedGraph > spaced_7mer_union_plusNoZero.bedGraph
+awk '!($4==0 || $5==0 || $6==0 || $7==0)' spaced_7mer_union_minus.bedGraph > spaced_7mer_union_minusNoZero.bedGraph
+
+#GATA2
+bigWigToBedGraph C1_gDNA_rep1_NNNC_plus.bigWig C1_gDNA_rep1_NNNC_plus.bedGraph
+bigWigToBedGraph C1_gDNA_rep1_NNNC_minus.bigWig C1_gDNA_rep1_NNNC_minus.bedGraph
+
+bigWigToBedGraph C1_gDNA_rep1_CXXNNN_plus.bigWig C1_gDNA_rep1_CXXNNN_plus.bedGraph
+bigWigToBedGraph C1_gDNA_rep1_CXXNNN_minus.bigWig C1_gDNA_rep1_CXXNNN_minus.bedGraph
+
+bigWigToBedGraph C1_gDNA_rep1_CXXXXXXNNN_plus.bigWig C1_gDNA_rep1_CXXXXXXNNN_plus.bedGraph
+bigWigToBedGraph C1_gDNA_rep1_CXXXXXXNNN_minus.bigWig C1_gDNA_rep1_CXXXXXXNNN_minus.bedGraph
+
+pfiles=$(ls *plus*bedGraph)
+mfiles=$(ls *minus*bedGraph)
+
+bedtools unionbedg -i ${pfiles} > gata_3mer_union_plus.bedGraph
+bedtools unionbedg -i ${mfiles} > gata_3mer_union_minus.bedGraph
+
+#remove columns with zero 
+awk '!($4==0 || $5==0 || $6==0 || $7==0)' gata_3mer_union_plus.bedGraph > gata_3mer_union_plusNoZero.bedGraph
+awk '!($4==0 || $5==0 || $6==0 || $7==0)' gata_3mer_union_minus.bedGraph > gata_3mer_union_minusNoZero.bedGraph
+
+
+
+#scaling calculation (Sf1 * Sf2 * Sf3)/(reads_at_position^2)
+#assumes the unscaled is listed last
+#python ../bedGraphUnionAtacScale.py -i spaced_3mer_union_plusNoZero.bedGraph
+#python ../bedGraphUnionAtacScale.py -i spaced_3mer_union_minusNoZero.bedGraph
+
+#bedGraphToBigWig spaced_3mer_union_minusNoZero_atac_scaled_global.bedGraph ../hg38.chrom.sizes spaced_3mer_union_minus_scaled.bigWig
+#bedGraphToBigWig spaced_3mer_union_plusNoZero_atac_scaled_global.bedGraph ../hg38.chrom.sizes spaced_3mer_union_plus_scaled.bigWig
+
+@ 
+
+with a seed sequence, is cutting at 5 bases downstream random or still biased?
+
+<<R_code_functions_test3mer, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize" >>=
+
+path.dir = '/Users/guertinlab/Desktop/atac_test/'
+
+#make this into a lattice
+kmer = 5
+density.df=data.frame(matrix(ncol = 10, nrow = 0))
+colnames(density.df) =c('index',      'kmer', 'plus.counts', 'minus.counts', 'plus.bam', 'minus.bam', 'expected.frac', 'exp.counts', 'scale.factor',       'mask')
+for (tbl in Sys.glob(file.path(path.dir, "*scale_factors_ATAC.txt"))) {
+        prefix.name = strsplit(tbl, "_scale_factors_ATAC.txt")[[1]][1]
+        print(prefix.name)
+        factor.name = strsplit(strsplit(tbl, "/")[[1]][length(strsplit(tbl, "/")[[1]])], 
+                               '.tbl')[[1]][1]
+        print(factor.name)
+        counts.tbl = read.table(tbl)
+        colnames(counts.tbl) = c('index', 'kmer', 'plus.counts', 'minus.counts', 'plus.bam', 'minus.bam')
+        counts.tbl$expected.frac = counts.tbl[,3]/sum(counts.tbl[,3])
+
+        counts.tbl$exp.counts = sum(counts.tbl$plus.bam)*counts.tbl$expected.frac
+        counts.tbl$scale.factor = counts.tbl$exp.counts/counts.tbl$plus.bam
+        length.mask = as.numeric(strsplit(strsplit(factor.name, "/")[[1]], '.', fixed = TRUE)[[1]][2])
+        plus.offset = as.numeric(strsplit(strsplit(factor.name, "/")[[1]], '.', fixed = TRUE)[[1]][3])
+        preceding.X = length.mask - kmer
+        if (plus.offset > kmer) {
+            mask = paste0(paste0(rep('N', kmer), collapse = ''), paste0(rep('X', plus.offset -kmer), collapse= ''), 'C', collapse ='')
+            print(mask)
+        }
+        if (length.mask == kmer & plus.offset != 0) {
+            mask = paste0(paste0(rep('N', plus.offset), collapse = ''), 'C',  paste0(rep('N', kmer -plus.offset), collapse= ''), collapse ='')
+            print(mask)
+        }
+        if (plus.offset == 0) {
+            mask = paste0('C', paste0(rep('X', length.mask - kmer), collapse = ''), paste0(rep('N', kmer), collapse= ''), collapse ='')
+            print(mask)
+        }
+        counts.tbl$mask = mask
+        density.df = rbind(density.df, counts.tbl)
+}
+
+
+#Bias of an estimator
+pdf('ten_vs_22_upstream.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+print(xyplot(density.df[density.df$mask == 'NNNNNXXXXXXXXXXXXXXXXXXXXXXC', 9] ~ density.df[density.df$mask == 'NNNNNXXXXXXXXXXC', 9], 
+             aspect = 1, 
+#             ylim = c(0,20000), 
+#             xlim = c(0,20000), 
+             pch =16, cex = 0.3, col = 'black', 
+       xlab='NNNNNX[10]C scale factors',
+       ylab='NNNNNX[22]C scale factors',
+      panel = function(x, y, ...){
+        panel.xyplot(x, y, ...)
+        panel.abline(0,1, lty = 2, col = 'red')
+#        panel.abline(v =3388, lty = 2, col = 'red')
+       }
+      ))
+dev.off()
+
+
+#Bias of an estimator
+pdf('density_scale_factors.pdf', width=4.43, 
+      height=9.43, useDingbats=FALSE)
+
+print(densityplot(~log(scale.factor, 10),data=density.df, groups = mask, auto.key = TRUE, 
+            par.settings = simpleTheme(c(rainbow(length(unique(density.df$mask))-1), 'black')), lwd = c(0.5,0.5),
+                  col = c(rainbow(length(unique(density.df$mask))-1), 'black'))) 
+dev.off()
+
+
+
+
+
+
+
+
+            preceding.X = length.mask - kmer
+        counts.tbl$mask = NNCNNN 5.3.3
+
+plot(a[,3], a[,5])
+a[a[,3] < 1000000,]
+
+plot(a[,8], a[,5])
+hist(a[a[,3] < 1000000,][,9])
+hist(a[a[,3] < 1000000,][,9], breaks = 100)
+hist(a[a[,3] > 1000000,][,9], breaks = 100)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+x = read.table('~/Desktop/atac_test/hg38_30.15.15.15.scale_factors.txt')
+
+#y = read.table('~/Desktop/atac_test/hg38_30.5.3.3.scale_factors.txt')
+
+#z = read.table('~/Desktop/atac_test/hg38_100.15.15.15.scale_factors.txt')
+
+a = read.table('~/Desktop/atac_test/hg38_30.15.15.15.scale_factors_dnase.txt')
+
+#
+
+pdf('artificial_deflated_DNase_scale_factors.pdf', width=3.43, 
+      height=3.43)
+print(xyplot(a[,5] ~ a[,8], aspect = 1, ylim = c(0,200000), xlim = c(0,200000), pch =16, cex = 0.5, 
+       col = 'black', ylab='observed counts', xlab = 'expected counts', main = 'DNase')
+
+a[,7] = a[,3]/sum(a[,3])
+
+a[,8] = sum(a[,5])*a[,7]
+
+a[,9] = a[,8]/a[,5]
+
+plot(a[,3], a[,5])
+a[a[,3] < 1000000,]
+
+plot(a[,8], a[,5])
+hist(a[a[,3] < 1000000,][,9])
+hist(a[a[,3] < 1000000,][,9], breaks = 100)
+hist(a[a[,3] > 1000000,][,9], breaks = 100)
+
+pdf('artificial_deflated_DNase_scale_factors.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+print(xyplot(a[,5] ~ a[,8], aspect = 1, ylim = c(0,200000), xlim = c(0,200000), pch =16, cex = 0.3, col = 'black', 
+       ylab='observed counts',
+       xlab='expected counts', main = 'DNase',
+      panel = function(x, y, ...){
+        panel.xyplot(x, y, ...)
+        panel.abline(0,1, lty = 2)
+        panel.abline(v =13292, lty = 2, col = 'red')
+       }
+      ))
+dev.off()
+
+
+pdf('artificial_deflated_ATAC_scale_factors.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+print(xyplot(x[,5] ~ x[,8], aspect = 1, ylim = c(0,20000), xlim = c(0,20000), pch =16, cex = 0.3, col = 'black', 
+       ylab='observed counts',
+       xlab='expected counts', main = 'ATAC',
+      panel = function(x, y, ...){
+        panel.xyplot(x, y, ...)
+        panel.abline(0,1, lty = 2)
+        panel.abline(v =3388, lty = 2, col = 'red')
+       }
+      ))
+dev.off()
+
+
+pdf('artificial_deflated_DNase_scale_factors_less_million.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+hist(log(a[a[,3] < 1000000,][,9], base = 10), breaks = 100, main = 'DNase', xlab = 'log10 scale factor')
+dev.off()
+
+pdf('artificial_deflated_DNase_scale_factors_greater_million.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+hist(log(a[a[,3] > 1000000,][,9], base =10), breaks = 100, main = 'DNase', xlab = 'log10 scale factor')
+dev.off()
+
+pdf('artificial_deflated_ATAC_scale_factors_less_million.pdf', width=3.43, 
+      height=3.43)
+hist(log(x[x[,3] < 1000000,][,9], base = 10), breaks = 100, main = 'ATAC', xlab = 'log10 scale factor')
+dev.off()
+
+pdf('artificial_deflated_ATAC_scale_factors_greater_million.pdf', width=3.43, 
+      height=3.43)
+hist(log(x[x[,3] > 1000000,][,9], base =10), breaks = 100, main = 'ATAC', xlab = 'log10 scale factor')
+dev.off()
+
+pdf('ATAC_DNasescale_factors_corr_less_million.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+
+print(xyplot(log(a[x[,3] < 1000000,][,9], base = 10) ~ log(x[x[,3] < 1000000,][,9], base = 10), aspect = 1, 
+             ylim = c(-1.2,0.1), 
+             xlim = c(-1.2,0.1), 
+             pch =16, cex = 0.3, col = 'black', 
+       ylab='log10 DNase scale factors',
+       xlab='log10 ATAC scale factors', 
+      panel = function(x, y, ...){
+        panel.xyplot(x, y, ...)
+        panel.abline(0,1, lty = 2)
+       }
+      ))
+dev.off()
+
+pdf('ATAC_DNasescale_factors_corr_greater_million.pdf', width=3.43, 
+      height=3.43, useDingbats=FALSE)
+
+print(xyplot(log(a[x[,3] > 1000000,][,9], base = 10) ~ log(x[x[,3] > 1000000,][,9], base = 10), aspect = 1, 
+             ylim = c(-0.7,0.5), 
+             xlim = c(-0.7,0.5), 
+             pch =16, cex = 0.3, col = 'black', 
+       ylab='log10 DNase scale factors',
+       xlab='log10 ATAC scale factors', 
+      panel = function(x, y, ...){
+        panel.xyplot(x, y, ...)
+        panel.abline(0,1, lty = 2)
+       }
+      ))
+dev.off()
+
+
+
+
+hist(x[,3], breaks = 200)
+
+y[,7] = y[,3]/sum(y[,3])
+
+y[,8] = sum(y[,5])*y[,7]
+
+y[,9] = y[,8]/y[,5]
+
+plot(y[,3], y[,5])
+y[y[,3] < 1000000,]
+
+plot(y[,8], y[,5])
+hist(y[y[,3] < 1000000,][,9])
+hist(y[y[,3] < 1000000,][,9], breaks = 100)
+hist(y[y[,3] > 1000000,][,9], breaks = 100)
+
+plot(log(y[x[,3] < 1000000,][,9]), log(x[x[,3] < 1000000,][,9]))
+
+hist(y[,3], breaks = 200)
+
+
+z[,7] = z[,3]/sum(z[,3])
+
+z[,8] = sum(z[,5])*z[,7]
+
+z[,9] = z[,8]/z[,5]
+
+plot(z[,3], z[,5])
+z[z[,3] < 1000000,]
+
+plot(z[,8], z[,5])
+hist(z[x[,3] < 1000000,][,9])
+hist(z[x[,3] < 1000000,][,9], breaks = 100)
+hist(z[x[,3] > 1000000,][,9], breaks = 100)
+
+plot(z[x[,3] > 1000000,][,9], x[x[,3] > 1000000,][,9])
+hist(z[,3], breaks = 200)
+
+
+plot(z[,8], z[,5])
+> abline(0,1)
+
+plot(z[x[,3] < 1000000,][,9], x[x[,3] < 1000000,][,9])
+
+plot(log(z[x[,3] > 1000000,][,9]), log(x[x[,3] > 1000000,][,9]))
+
+plot(log(z[x[,3] < 1000000,][,9]), log(x[x[,3] < 1000000,][,9]))
+
+plot(density(log(z[x[,3] < 1000000,][,9])))
+plot(density(log(z[x[,3] > 1000000,][,9])))
+
+
+
+plusTest = read.table('C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted_pos5.fasta', 
+                          comment.char = '>')
+
+plusTest[,1] = as.character(plusTest[,1])
+plusTest = data.frame(lapply(plusTest, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+plusInput = read.table('hg38.3.3.3.plus_central_pos5_input.fasta', 
+                          comment.char = '>')
+plusInput[,1] = as.character(plusInput[,1])
+plusInput = data.frame(lapply(plusInput, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+
+plusCentral = read.table('C1_gDNA_rep1_plus_shifted_overlap.oneentry_shifted.fasta', 
+                          comment.char = '>')
+plusCentral[,1] = as.character(plusCentral[,1])
+plusCentral = data.frame(lapply(plusCentral, function(v) {
+if (is.character(v)) return(toupper(v))
+else return(v)
+}))
+
+#I need to make this a general functino with argument for pswm width
+pswm.func.4 <- function(x.ligation, out = 'outfilename') {
+    a = lapply(strsplit(as.character(x.ligation), ''), "[", 1)
+    b = lapply(strsplit(as.character(x.ligation), ''), "[", 2)
+    c = lapply(strsplit(as.character(x.ligation), ''), "[", 3)
+    col.matrix = cbind(a,b,c)
+    a.nuc = sapply(1:3, function(x) sum(col.matrix[,x] == "A"))
+    t.nuc = sapply(1:3, function(x) sum(col.matrix[,x] == "T"))
+    c.nuc = sapply(1:3, function(x) sum(col.matrix[,x] == "C"))
+    g.nuc = sapply(1:3, function(x) sum(col.matrix[,x] == "G"))
+    #pswm = cbind(a.nuc*(0.25/.2), c.nuc*(0.25/.3), g.nuc*(0.25/.3), t.nuc*(0.25/.2))
+    pswm = cbind(a.nuc, c.nuc, g.nuc, t.nuc)
+    print(pswm)
+    outfile = file(paste0(out, '.txt'))
+    on.exit(close(outfile))
+    writeLines(c("MEME version 4", "ALPHABET= ACGT", "strands: + -", " ", 
+                 "Background letter frequencies (from uniform background):", 
+                 "A 0.20000 C 0.30000 G 0.30000 T 0.20000", paste("MOTIF", out), " ",
+                 "letter-probability matrix: alength= 4 w= 3"), outfile)
+    pswm2 = pswm/rowSums(pswm)
+    write.table(pswm2, file = paste0(out, '.txt'), append = TRUE, quote=FALSE, row.names =FALSE, col.names = FALSE)
+#the followign line can be uncommented if ceqlogo is installed and in your $PATH    
+#    system(paste('ceqlogo -i ', out, '.txt -m 1 > ', out, '.eps', sep=''))
+    return(pswm)
+}
+
+pswm.downstream.3mer = pswm.func.4(plusTest[,1], 'downstream_peak_3mer_seqLogo')
+
+pswm.downstream.3mer = pswm.downstream.3mer / rowSums(pswm.downstream.3mer)
+pswm.downstream.3mer.trans = t(pswm.downstream.3mer)
+rownames(pswm.downstream.3mer.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.downstream.3mer.trans, outfile='pswm_downstream_3mer_trans.pdf')
+
+pswm.downstream.input = pswm.func.4(plusInput[,1], 'downstream_peak_input_seqLogo')
+
+pswm.downstream.input = pswm.downstream.input / rowSums(pswm.downstream.input)
+pswm.downstream.input.trans = t(pswm.downstream.input)
+rownames(pswm.downstream.input.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.downstream.input.trans, outfile='pswm_downstream_input_trans.pdf')
+
+
+pswm.downstream.central = pswm.func.4(plusCentral[,1], 'downstream_peak_central_seqLogo')
+
+pswm.downstream.central = pswm.downstream.central / rowSums(pswm.downstream.central)
+pswm.downstream.central.trans = t(pswm.downstream.central)
+rownames(pswm.downstream.central.trans) = c('A', 'C', 'G', 'T')
+plot.seqlogo.func(pswm.downstream.central.trans, outfile='pswm_downstream_central_trans.pdf')
+
+
+@
+\clearpage
+
+\noindent  These are the final segLogos, but you should expand the
+window.
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.5]{\string~/Desktop/atac_test/pswm_pe1_minus_no_shift.pdf}
+\caption[pswm pe1 minus]{PE1 minus PSWM.}
+\label{Figure_pswmpe1minus}
+\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.5]{\string~/Desktop/atac_test/pswm_pe1_plus_no_shift.pdf}
+\caption[pswm pe1 plus]{PE1 plus PSWM.}
+\label{Figure_pswmpe1plus}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.5]{\string~/Desktop/atac_test/pswm_pe2_minus_no_shift.pdf}
+\caption[pswm pe2 minus]{PE2 minus PSWM.}
+\label{Figure_pswmpe2minus}
+\end{center}
+\end{figure}
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.5]{\string~/Desktop/atac_test/pswm_pe2_plus_no_shift.pdf}
+\caption[pswm pe2 plus]{PE2 plus PSWM.}
+\label{Figure_pswmpe2plus}
+\end{center}
+\end{figure}
+
+\clearpage
+
+\section{Composite profiles}
+
+Composites
+
+<<R_code_comps, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize">>=
+library(bigWig)
+
+
+composites.generate <- function(fimo.file = 'all_dnase_seq_pswm_0001_fimo.txt', 
+                                path.dir = '/Users/guertinlab/Desktop/atac_test/dnase_bigwigs/', 
+                                region = 20, motif = 'DNase') {
+    fimo = read.table(fimo.file, skip = 1)[,c(2, 3, 4, 6, 7, 5, 1, 8)]
+#    fimo = head(fimo, 2000000)
+    colnames(fimo) = c('chr', 'start', 'end', 'score', 'pval', 'strand', 'enzyme', 'sequence') 
+    for (example.bigWig in Sys.glob(file.path(path.dir, "*plus*bigWig"))[1]) {
+        print(example.bigWig)
+        example.bw=load.bigWig(example.bigWig) 
+        for (i in 1:length(example.bw$chroms)) {
+#making sure there are not reads off the chromosome          
+            fimo = subset(fimo, (fimo[,1] == example.bw$chroms[i]) & 
+                                (fimo[,3] < example.bw$chromSizes[i] - region) | 
+                                fimo[,1] != example.bw$chroms[i])
+        }
+    }
+#filtering the input file more        
+    fimo = fimo[fimo[,2] > region,]
+#removes all the garbage chromosomes (redundant with shell workflow)           
+    fimo = fimo[grep('_', fimo[,1], invert = TRUE),]
+    fimo.plus.window = center.bed(fimo[fimo$strand == '+',], upstreamWindow = region,
+                                  downstreamWindow = region)
+#this orients the plus and minus composites with respect to the motif boundaries if on minus strand and odd length motif            
+    if ((fimo[1,2] + fimo[1,3]) %% 2 == 1) {
+        fimo.minus.window = center.bed(fimo[fimo$strand == '-',], upstreamWindow = region,
+                                       downstreamWindow = region)
+    } else {
+        fimo.minus.window = center.bed(fimo[fimo$strand == '-',], upstreamWindow = region - 1,
+                                       downstreamWindow = region + 1)
+    }
+#making composites. For now I have plus and minus separate.    
+    composite.df=data.frame(matrix(ncol = 6, nrow = 0))
+    for (mod.bigWig in Sys.glob(file.path(path.dir, "*plus*bigWig"))) {
+        prefix.name = strsplit(mod.bigWig, "plus")[[1]][1]
+        print(prefix.name)
+        factor.name = strsplit(strsplit(mod.bigWig, "/")[[1]][length(strsplit(mod.bigWig, "/")[[1]])], 
+                               '\\plus')[[1]][1]
+        suffix.name = strsplit(mod.bigWig, "plus")[[1]][length(strsplit(mod.bigWig, 
+                                                                        "plus")[[1]])]
+        print(factor.name)
+        print(suffix.name)
+        plus.bw=load.bigWig(paste0(prefix.name, 'plus', suffix.name)) 
+        minus.bw=load.bigWig(paste0(prefix.name, 'minus', suffix.name)) 
+        plus.matrix = bed6.step.bpQuery.bigWig(plus.bw, minus.bw, fimo.plus.window,
+                                               step = 1, as.matrix=TRUE, follow.strand=TRUE)
+        minus.matrix = bed6.step.bpQuery.bigWig(plus.bw, minus.bw, fimo.minus.window,
+                                                step = 1, as.matrix=TRUE, follow.strand=TRUE)
+#this x axis is wrong, needs to be fixed        
+        colnames(plus.matrix) = seq((-ncol(plus.matrix )/2)+0.5, (ncol(plus.matrix )/2)-0.5, by = 1)
+        rownames(plus.matrix) = paste0(fimo.plus.window[,1],':',fimo.plus.window[,2],'-',fimo.plus.window[,3])
+#        print(colSums(plus.matrix))
+
+        pdf(paste('composite_', factor.name, motif, 'plus_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(plus.matrix)),colMeans(plus.matrix), xlim = c(-(0.9 * region), (0.9*region)),
+             xlab = paste0('plus ', motif, ' position'),
+             ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        colnames(minus.matrix) = seq((-ncol(minus.matrix )/2)+0.5, (ncol(minus.matrix )/2)-0.5, by = 1)
+        rownames(minus.matrix) = paste0(fimo.minus.window[,1],':',fimo.minus.window[,2],'-',fimo.minus.window[,3])
+        
+        pdf(paste('composite_', factor.name, motif, 'minus_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(minus.matrix)),colMeans(minus.matrix), xlim = c(-(0.9 * region), (0.9*region)),
+             xlab = paste0('minus ', motif, ' position'),
+             ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        
+        all.matrix = rbind(plus.matrix, minus.matrix)
+        pdf(paste('composite_', factor.name, motif, 'all_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(all.matrix)),colMeans(all.matrix), 
+         xlab = paste0('all ', motif, ' position'), xlim = c(-(0.9 * region), (0.9*region)),
+         ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        unload.bigWig(plus.bw)
+        unload.bigWig(minus.bw)
+#once everyhting is lined up this shoudl be all and not plus, but this is good for troubleshooting        
+        subsample = subsampled.quantiles.metaprofile(plus.matrix)
+        df.up <- data.frame(matrix(ncol = 6, nrow=length(colMeans(plus.matrix))))
+        df.up[, 1] <- colMeans(plus.matrix)
+        df.up[, 2] <- as.numeric(colnames(plus.matrix))
+        df.up[, 3] <- matrix(data = paste0(factor.name, suffix.name), nrow=length(colMeans(plus.matrix)), ncol=1)
+        df.up[, 4] <- subsample$top
+        df.up[, 5] <- subsample$bottom
+        df.up[, 6] <- matrix(data = motif, nrow=length(colMeans(plus.matrix)), ncol=1)
+        composite.df = rbind(composite.df, df.up)
+#set a window aroud        
+    }
+    colnames(composite.df) <- c('est', 'x', 'cond', 'upper', 'lower', 'grp')
+    return(composite.df)
+#rbind plus and minus and plot that.
+#return combined matrix
+}
+
+
+
+composites.plot <- function(dat, fact = 'Factor', summit = 'Summit', num=90, 
+              col.lines = c(rgb(0,0,1,1/2), rgb(1,0,0,1/2),  rgb(0.1,0.5,0.05,1/2), rgb(0,0,0,1/2),  
+              rgb(1/2,0,1/2,1/2), rgb(0,1/2,1/2,1/2), rgb(1/2,1/2,0,1/2)), fill.poly = c(rgb(0,0,1,1/4), 
+              rgb(1,0,0,1/4), rgb(0.1,0.5,0.05,1/4),rgb(0,0,0,1/4), rgb(1/2,0,1/2,1/4),rgb(0,1/2,1/2,1/2), rgb(1/2,1/2,0,1/2))) {
+  count = length(unique(dat$grp))
+  ct.cons = 0
+  lst.cons = list()
+  unique(dat$grp)[order(unique(dat$grp))]
+ for (i in unique(dat$grp)[order(unique(dat$grp))]) {
+      ct.cons= ct.cons + 1
+      lst.cons[[ct.cons]] = c(min(dat[dat$grp == i,]$lower), max(dat[dat$grp == i,]$upper))
+  }
+  pdf(paste('composite_', fact, '_signals_', summit, '_peaks.pdf', sep=''), width=3.43, 
+      height=ceiling((count)) * 3.00) 
+  print(xyplot(est ~ x|grp, group = cond, data = dat,
+               type = 'l',
+               scales=list(x=list(cex=0.8,relation = "free"), y =list(cex=0.8, relation="free")),
+               xlim=c(-(num),(num)),
+               ylim = lst.cons,
+               col = col.lines,
+               auto.key = list(points=F, lines=T, cex=0.8),
+               par.settings = list(superpose.symbol = list(pch = c(16), col=col.lines, cex =0.5), 
+                   superpose.line = list(col = col.lines, lwd=c(2), 
+                       lty = c(1,1,1,1,1,1,1,1,1))),
+               cex.axis=1.0,
+               par.strip.text=list(cex=0.9, font=1, col='black'),
+               aspect=1.0,
+               between=list(y=0.5, x=0.5),
+               #lwd=2,
+               ylab = list(label = paste(fact," Cut Frequency", sep=''), cex =0.8),
+               xlab = list(label = paste("Distance from ", summit, " center",sep=''), cex =0.8),
+               upper = dat$upper,
+               fill = fill.poly,
+               lower = dat$lower,
+               strip = function(..., which.panel, bg) {
+                 bg.col = c("grey85")
+                 strip.default(..., which.panel = which.panel, bg = rep(bg.col, length = which.panel)[which.panel])
+             },
+               panel = function(x, y, ...){
+         panel.superpose(x, y, panel.groups = 'my.panel.bands', ...)
+                   panel.xyplot(x, y, ...)
+       }
+  ))
+  dev.off()
+}
+
+
+#all different thresholds.
+#all_cyanase_seq_pswm_00007_fimo.txt
+#all_benzonase_seq_pswm_00005_fimo.txt
+#all_atac_seq_pswm_00005_fimo.txt
+
+#fimo.ex = read.table('all_dnase_seq_pswm_0001_fimo.txt', skip = 1)[,c(2, 3, 4, 6, 7, 5, 1, 8)]
+#colnames(fimo.ex) = c('chr', 'start', 'end', 'score', 'pval', 'strand', 'enzyme', 'sequence') 
+
+dnase.composite = composites.generate(fimo.file = 'all_dnase_seq_pswm_0001_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/dnase_bigwigs/', 
+                    region = 20, motif = 'DNase')
+
+cyanase.composite = composites.generate(fimo.file = 'all_cyanase_seq_pswm_00007_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/cyanase_bigwigs/', 
+                    region = 20, motif = 'Cyanase')
+
+benzonase.composite = composites.generate(fimo.file = 'all_benzonase_seq_pswm_00005_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/benzonase_bigwigs/', 
+                    region = 20, motif = 'Benzonase')
+
+
+#DNase with an odd length motif and see where cut site is relative to the DNase consensus.
+#this control tells us where the motif is relative to position zero on odd length motifs
+dnase.odd.composite = composites.generate(fimo.file = 'all_dnase_seq_pswm_00005_fimo_odd.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/dnase_bigwigs/', 
+                    region = 20, motif = 'dnase_odd')
+
+#the extra is seqlogoletter is upstream.
+
+
+#this next is not correct in relative terms since we don't shift the minus counts to align with plus if there wasn't
+#a 9 base duplication event
+atac.composite = composites.generate(fimo.file = 'all_atac_seq_pswm_00005_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/', 
+                    region = 20, motif = 'ATAC')
+
+atac.shifted.composite = composites.generate(fimo.file = 'all_atac_seq_pswm_00005_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/shift/', 
+                    region = 20, motif = 'ATAC_shifted')
+
+atac.no.central3mer.composite = composites.generate(fimo.file = 'all_atac_seq_pswm_minus_central_3mer_00007_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/shift/', 
+                    region = 20, motif = 'ATAC_no_central')
+
+#three mer CTRL
+atac.central3mer.composite = composites.generate(fimo.file = 'hg38.3.3.3plus_representative.bed', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/shift/', 
+                    region = 20, motif = 'ATAC_three_mer')
+
+#testing the selective flattening of peaks.
+test.x = atac.3mer.noshift.composite = composites.generate(fimo.file =  '../hg38.3.3.3plus_representative100k.bed', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/', 
+                    region = 20, motif = 'ATAC_3mer_no_shift')
+composites.plot(test.x, fact = 'ATAC', summit = 'summit', num=20)
+
+
+
+test.x = atac.3mer.noshift.composite = composites.generate(fimo.file =  'hg38.3.3.3plus_representative100k.bed', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 20, motif = 'ATAC_3mer_no_shift_scaled')
+
+
+
+composites.plot(test.x, fact = 'DNase', summit = 'summit', num=20)
+
+
+#
+
+composites.generate.jake.fimo <- function(fimo.file = 'all_dnase_seq_pswm_0001_fimo.txt', 
+                                path.dir = '/Users/guertinlab/Desktop/atac_test/dnase_bigwigs/', 
+                                region = 20, motif = 'DNase') {
+    fimo = read.table(fimo.file, skip = 1)[,c(3, 4, 5, 7, 8, 6, 1, 9)]
+    fimo = head(fimo, 2000000)
+    colnames(fimo) = c('chr', 'start', 'end', 'score', 'pval', 'strand', 'enzyme', 'sequence') 
+    for (example.bigWig in Sys.glob(file.path(path.dir, "*plus*bigWig"))[1]) {
+        print(example.bigWig)
+        example.bw=load.bigWig(example.bigWig) 
+        for (i in 1:length(example.bw$chroms)) {
+#making sure there are not reads off the chromosome          
+            fimo = subset(fimo, (fimo[,1] == example.bw$chroms[i]) & 
+                                (fimo[,3] < example.bw$chromSizes[i] - region) | 
+                                fimo[,1] != example.bw$chroms[i])
+        }
+    }
+#filtering the input file more        
+    fimo = fimo[fimo[,2] > region,]
+#removes all the garbage chromosomes (redundant with shell workflow)           
+    fimo = fimo[grep('_', fimo[,1], invert = TRUE),]
+    fimo.plus.window = center.bed(fimo[fimo$strand == '+',], upstreamWindow = region,
+                                  downstreamWindow = region)
+#this orients the plus and minus composites with respect to the motif boundaries if on minus strand and odd length motif            
+    if ((fimo[1,2] + fimo[1,3]) %% 2 == 1) {
+        fimo.minus.window = center.bed(fimo[fimo$strand == '-',], upstreamWindow = region,
+                                       downstreamWindow = region)
+    } else {
+        fimo.minus.window = center.bed(fimo[fimo$strand == '-',], upstreamWindow = region - 1,
+                                       downstreamWindow = region + 1)
+    }
+#making composites. For now I have plus and minus separate.    
+    composite.df=data.frame(matrix(ncol = 6, nrow = 0))
+    for (mod.bigWig in Sys.glob(file.path(path.dir, "*plus*bigWig"))) {
+        prefix.name = strsplit(mod.bigWig, "plus")[[1]][1]
+        print(prefix.name)
+        factor.name = strsplit(strsplit(mod.bigWig, "/")[[1]][length(strsplit(mod.bigWig, "/")[[1]])], 
+                               '\\plus')[[1]][1]
+        suffix.name = strsplit(mod.bigWig, "plus")[[1]][length(strsplit(mod.bigWig, 
+                                                                        "plus")[[1]])]
+        print(factor.name)
+        print(suffix.name)
+        plus.bw=load.bigWig(paste0(prefix.name, 'plus', suffix.name)) 
+        minus.bw=load.bigWig(paste0(prefix.name, 'minus', suffix.name)) 
+        plus.matrix = bed6.step.bpQuery.bigWig(plus.bw, minus.bw, fimo.plus.window,
+                                               step = 1, as.matrix=TRUE, follow.strand=TRUE)
+        minus.matrix = bed6.step.bpQuery.bigWig(plus.bw, minus.bw, fimo.minus.window,
+                                                step = 1, as.matrix=TRUE, follow.strand=TRUE)
+#this x axis is wrong, needs to be fixed        
+        colnames(plus.matrix) = seq((-ncol(plus.matrix )/2)+0.5, (ncol(plus.matrix )/2)-0.5, by = 1)
+        rownames(plus.matrix) = paste0(fimo.plus.window[,1],':',fimo.plus.window[,2],'-',fimo.plus.window[,3])
+#        print(colSums(plus.matrix))
+
+        pdf(paste('composite_', factor.name, motif, 'plus_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(plus.matrix)),colMeans(plus.matrix), xlim = c(-(0.9 * region), (0.9*region)),
+             xlab = paste0('plus ', motif, ' position'),
+             ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        colnames(minus.matrix) = seq((-ncol(minus.matrix )/2)+0.5, (ncol(minus.matrix )/2)-0.5, by = 1)
+        rownames(minus.matrix) = paste0(fimo.minus.window[,1],':',fimo.minus.window[,2],'-',fimo.minus.window[,3])
+        
+        pdf(paste('composite_', factor.name, motif, 'minus_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(minus.matrix)),colMeans(minus.matrix), xlim = c(-(0.9 * region), (0.9*region)),
+             xlab = paste0('minus ', motif, ' position'),
+             ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        
+        all.matrix = rbind(plus.matrix, minus.matrix)
+        pdf(paste('composite_', factor.name, motif, 'all_motif.pdf', sep=''), width=3.43, height = 3.43)
+        plot(as.numeric(colnames(all.matrix)),colMeans(all.matrix), 
+         xlab = paste0('all ', motif, ' position'), xlim = c(-(0.9 * region), (0.9*region)),
+         ylab = paste0(factor.name, ' signal'), type = "l")
+        dev.off()
+        unload.bigWig(plus.bw)
+        unload.bigWig(minus.bw)
+#once everyhting is lined up this shoudl be all and not plus, but this is good for troubleshooting        
+        subsample = subsampled.quantiles.metaprofile(plus.matrix)
+        df.up <- data.frame(matrix(ncol = 6, nrow=length(colMeans(plus.matrix))))
+        df.up[, 1] <- colMeans(plus.matrix)
+        df.up[, 2] <- as.numeric(colnames(plus.matrix))
+        df.up[, 3] <- matrix(data = paste0(factor.name, suffix.name), nrow=length(colMeans(plus.matrix)), ncol=1)
+        df.up[, 4] <- subsample$top
+        df.up[, 5] <- subsample$bottom
+        df.up[, 6] <- matrix(data = motif, nrow=length(colMeans(plus.matrix)), ncol=1)
+        composite.df = rbind(composite.df, df.up)
+#set a window aroud        
+    }
+    colnames(composite.df) <- c('est', 'x', 'cond', 'upper', 'lower', 'grp')
+    return(composite.df)
+#rbind plus and minus and plot that.
+#return combined matrix
+}
+
+
+#testing
+#winsorize all scaling factors goin gin and then winsorize the final?
+#it looks like troughs are beign scaled up to spurious peaks, but peaks are being scaled down appropriately.
+
+x = read.table('spaced_3mer_union_plusNoZero.bedGraph')
+y = read.table('spaced_3mer_union_plusNoZero_atac_scaled_global.bedGraph')
+
+quantile(y[,4], probs = seq(0, 1, 0.05))
+quantile(x[,4], probs = seq(0, 1, 0.05))
+quantile(x[,5], probs = seq(0, 1, 0.05))
+quantile(x[,6], probs = seq(0, 1, 0.05))
+
+test.x = atac.3mer.noshift.composite = composites.generate(fimo.file =  '../hg38.3.3.3plus_representative100k.bed', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_3mer_no_shift_scaled')
+
+composites.plot(test.x, fact = 'ATAC', summit = 'summit', num=30)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#winsorize
+#there are some extremes at the top and bottom scale factors
+#the problem is big scaling factors.
+x = read.table('gata_3mer_union_plusNoZero.bedGraph')
+#winsorize the data
+#thsi works ok, but the 
+#top = quantile(x[,5], probs = seq(0, 1, 0.05))[16]
+#bottom = quantile(x[,5], probs = seq(0, 1, 0.05))[2]
+#x[,5][x[,5] > top] <- top
+#x[,5][x[,5] < bottom] <- bottom
+
+#top = quantile(x[,4], probs = seq(0, 1, 0.05))[16]
+#bottom = quantile(x[,4], probs = seq(0, 1, 0.05))[2]
+#x[,4][x[,4] > top] <- top
+#x[,4][x[,4] < bottom] <- bottom
+
+
+#top = quantile(x[,6], probs = seq(0, 1, 0.05))[16]
+#bottom = quantile(x[,6], probs = seq(0, 1, 0.05))[2]
+#x[,6][x[,6] > top] <- top
+#x[,6][x[,6] < bottom] <- bottom
+
+#multiple by scale factor
+#x[,8] = (x[,4] * x[,5] * x[,6]) /(x[,7]^2)
+x[,8] = apply(x[,4:6], 1, min)
+
+top = quantile(x[,8], probs = seq(0, 1, 0.05))[16]
+#bottom = quantile(x[,8], probs = seq(0, 1, 0.05))[2]
+x[,8][x[,8] > top] <- top
+
+#next step is to exclude this, as even C(A/T)G needs to be scaled down a lot.
+#x[,8][x[,8] < bottom] <- bottom
+
+norm = (sum(x[,7])/nrow(x)) / (sum(x[,8])/nrow(x))
+x[,8] = x[,8] * norm
+
+write.table(x[,c(1:3,8)], file = '~/Desktop/atac_test/atac_bigwigs/gata_3mer_union_winsorized_plus.bedGraph', col.names = FALSE, row.names=FALSE, sep = '\t', quote=FALSE)
+
+system('bedGraphToBigWig ~/Desktop/atac_test/atac_bigwigs/gata_3mer_union_winsorized_plus.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes ~/Desktop/atac_test/atac_bigwigs/subset/gata_3mer_union_winsorized_plus.bigWig')
+
+
+
+x = read.table('gata_3mer_union_minusNoZero.bedGraph')
+#winsorize the data
+#thsi works ok, but the 
+top = quantile(x[,5], probs = seq(0, 1, 0.05))[20]
+#bottom = quantile(x[,5], probs = seq(0, 1, 0.05))[2]
+x[,5][x[,5] > top] <- top
+#x[,5][x[,5] < bottom] <- bottom
+
+top = quantile(x[,4], probs = seq(0, 1, 0.05))[20]
+#bottom = quantile(x[,4], probs = seq(0, 1, 0.05))[2]
+x[,4][x[,4] > top] <- top
+#x[,4][x[,4] < bottom] <- bottom
+
+
+top = quantile(x[,6], probs = seq(0, 1, 0.05))[20]
+#bottom = quantile(x[,6], probs = seq(0, 1, 0.05))[2]
+x[,6][x[,6] > top] <- top
+#x[,6][x[,6] < bottom] <- bottom
+
+#multiply scale factor
+#x[,8] = (x[,4] * x[,5] * x[,6]) /(x[,7]^2)
+x[,8] = apply(x[,4:6], 1, min)
+
+top = quantile(x[,8], probs = seq(0, 1, 0.05))[16]
+#bottom = quantile(x[,8], probs = seq(0, 1, 0.05))[2]
+x[,8][x[,8] > top] <- top
+
+#next step is to exclude this, as even C(A/T)G needs to be scaled down a lot.
+#x[,8][x[,8] < bottom] <- bottom
+
+norm = (sum(x[,7])/nrow(x)) / (sum(x[,8])/nrow(x))
+x[,8] = x[,8] * norm
+
+write.table(x[,c(1:3,8)], file = '~/Desktop/atac_test/atac_bigwigs/gata_3mer_union_winsorized_minus.bedGraph', col.names = FALSE, row.names=FALSE, sep = '\t', quote=FALSE)
+
+system('bedGraphToBigWig ~/Desktop/atac_test/atac_bigwigs/gata_3mer_union_winsorized_minus.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes ~/Desktop/atac_test/atac_bigwigs/subset/gata_3mer_union_winsorized_minus.bigWig')
+
+
+
+
+
+
+gata2 = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/GATA2_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/subset/', 
+                    region = 30, motif = 'ATAC_spaced3_optimized_for_GATA2')
+composites.plot(gata2, fact = 'GATA2_spaced', summit = 'summit_minimum_all_NO_bottom', num=25)
+
+
+gata2 = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/GATA2_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/atac_bigwigs/', 
+                    region = 30, motif = 'ATAC_3mers_spaced7_average_scale_factorGATA2')
+composites.plot(gata2, fact = 'GATA2', summit = 'summit_', num=25)
+
+
+
+foxk2 = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/FOXK2_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorFOXK2')
+composites.plot(foxk2, fact = 'FOXK2', summit = 'summit_19top_index_all_NO_bottom', num=30)
+
+max = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/MAX_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorMAX')
+composites.plot(max, fact = 'MAX', summit = 'summit_19top_index_all_NO_bottom', num=30)
+
+rest = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/REST_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorREST')
+composites.plot(rest, fact = 'REST', summit = 'summit_19top_index_all_NO_bottom', num=30)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+x = read.table('spaced_3mer_union_plusNoZero_atac_scaled_global.bedGraph')
+top = quantile(x[,4], probs = seq(0, 1, 0.05))[20]
+bottom = quantile(x[,4], probs = seq(0, 1, 0.05))[2]
+x[,4][x[,4] > top] <- top
+x[,4][x[,4] < bottom] <- bottom
+
+write.table(x, file = 'spaced_3mer_union_plus_winsorized.bedGraph', col.names = FALSE, row.names=FALSE, sep = '\t', quote=FALSE)
+
+
+
+x = read.table('spaced_3mer_union_minusNoZero_atac_scaled_global.bedGraph')
+
+#winsorize
+top = quantile(x[,4], probs = seq(0, 1, 0.05))[20]
+bottom = quantile(x[,4], probs = seq(0, 1, 0.05))[2]
+x[,4][x[,4] > top] <- top
+x[,4][x[,4] < bottom] <- bottom
+
+write.table(x, file = 'spaced_3mer_union_minus_winsorized.bedGraph', col.names = FALSE, row.names=FALSE, sep = '\t', quote=FALSE)
+
+system('bedGraphToBigWig ~/Desktop/atac_test/scaled_mer/spaced_3mer_union_plus_winsorized.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes ~/Desktop/atac_test/scaled_mer/spaced_3mer_union_winsorized_plus.bigWig')
+system('bedGraphToBigWig ~/Desktop/atac_test/scaled_mer/spaced_3mer_union_minus_winsorized.bedGraph /Users/guertinlab/genomes/hg38/hg38.chrom.sizes ~/Desktop/atac_test/scaled_mer/spaced_3mer_union_winsorized_minus.bigWig')
+
+
+
+
+
+
+gata2 = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/GATA2_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorGATA2')
+composites.plot(gata2, fact = 'GATA2', summit = 'summit', num=30)
+
+foxk2 = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/FOXK2_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorFOXK2')
+composites.plot(foxk2, fact = 'FOXK2', summit = 'summit', num=30)
+
+max = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/MAX_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorMAX')
+composites.plot(max, fact = 'MAX', summit = 'summit', num=30)
+
+rest = atac.3mer.noshift.composite = composites.generate.jake.fimo(fimo.file =  '/Users/guertinlab/Desktop/atac_test/FIMO/REST_fimo.txt', 
+                    path.dir = '/Users/guertinlab/Desktop/atac_test/scaled_mer/', 
+                    region = 30, motif = 'ATAC_spaced5_average_scale_factorREST')
+composites.plot(rest, fact = 'REST', summit = 'summit', num=30)
+
+#no reason to make a plus and minus, input can be an appropriately shifted bigWig and this script, but the bigWig for plus and minus is the same.
+
+@ 
+
+
+
+
+
+
+
+
+
+
+
+\section{Selecting a k-mer mask}
+The sequence bias was first recognized by composite profiles of
+DNase-seq data centered on Transcription Factor binding
+sites. Therefore, we aim to use a diverse set of PSWMs representing
+many composite TFBSs and empirically determine which mask positions
+are most influential at flattening these profiles. 
+
+
+\subsection{Hill climbing optimization} 
+
+I have the code below for exclusively the PE1 plus data, but you
+should run it for all four combinations of PE and strand. This takes a
+long time to run and the output files are big. The method takes a
+starting k-mer mask, a set of site tables (one table per TF), and at
+each step turns an masked position into an unmasked position, choosing
+the position that results in the lowest score. It iterates until there are no more unmasked positions. \\
+
+
+\textbf{I have this running on Rivanna with 20 + cores. It
+  takes too long to run locally. Remind me to update this code if you
+  get here.}
+
+<<R_code_rivanna, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize">>=
+
+#use the following line, excepting the comment character, to create and interative session
+#ijob -A guertinlab -c 40 -p standard --mem-per-cpu= 2000 -t 48:00:00
+
+#load these modules and start an R session:
+module load gcc/7.1.0  
+module load seqoutbias/1.2.0
+module load openmpi/3.1.4
+module load R/4.0.0
+module load genometools/1.5.10
+
+R
+
+@ 
+
+<<R_code_hillclimbing, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize">>=
+
+#devtools needs to be installed
+install.packages('devtools') #only install once
+
+#I don't recall if parallel is preinstalled, try to load, if it does not load, then install:
+#install.packages('parallel')
+
+#you need to install this
+devtools::install_github("andrelmartins/bigWig", subdir="bigWig")
+
+source("https://raw.githubusercontent.com/guertinlab/seqOutBias/master/docs/R/seqOutBias_hcsearch.R")
+
+#I changed it so that there is no more than 300k sites per fimo file
+#All the motif conformity scores are greater than the 300,000th score
+load.sites <- function(filenames, num ) {
+    lapply(filenames, function(filename) {
+        fimo = read.table(filename, skip = 1, sep ='\t')
+        len.vec.values = length(fimo[,7])
+        if (length(fimo[,7]) > num ){
+            subset.len = len.vec.values - num
+            sort.sub = sort(fimo[,7], partial=subset.len)[subset.len]
+            top.index = which(fimo[,7] > sort.sub)
+            fimo.small = fimo[top.index,]
+            bed6 = fimo.small[, c(3,4,5,2,7,6)]
+        } else {
+             bed6 = fimo[, c(3,4,5,2,7,6)]
+        }
+        bed6
+    }) 
+}
+
+#this helps a little especially for the first position in the mask, or subsequent positions if they are the saem
+hc.search.mods <- function(sites, start_mask, seqoutbias.args, prefix = "run_", 
+                           bw.split = FALSE, cleanup = TRUE, sqcmd = "seqOutBias", mc.cores = 2) {
+    neighbors <- function(vecmask) {
+                                        # generate list of neighboring masks that differ
+                                        # by the addition of a single unmasked position
+        result <- vector(mode="list", length=length(vecmask))
+        n <- 0
+        for (k in 1:length(vecmask)) {
+            if (vecmask[k] == -1) { # X
+                n <- n + 1
+                vi = vecmask
+                vi[k] = 1 # N
+                result[[n]] <- vec.to.mask(vi)
+            }
+        }
+        
+        if (n == 0) return(NULL)
+        result[1:n]
+    }                                 #
+    mask = character()
+    score = numeric()
+    rtable = data.frame(c(score, mask), stringsAsFactors=FALSE)
+    nextlst = neighbors(mask.to.vec(start_mask))
+    print(nextlst)
+        while (!is.null(nextlst)) {
+            print(nextlst)
+            scores = mclapply(nextlst, function(cutmask) {
+                if (file.exists(paste0('runhc_', cutmask, '.bw'))) {
+                    bw.plus = load.bigWig(paste0('runhc_', cutmask, '.bw'))    
+                    bw.minus = load.bigWig(paste0('runhc_', cutmask, '.bw'))
+                } else {
+                    bw.paths = run.cutmask(cutmask, seqoutbias.args, sqcmd=sqcmd, prefix=prefix)
+                    bw.plus = load.bigWig(bw.paths[1])
+                    bw.minus = load.bigWig(bw.paths[2])
+                }
+                    score = eval.cutmask(sites, bw.plus, bw.minus)
+                    data.frame(score = score, mask = cutmask, stringsAsFactors=FALSE)
+            }, mc.cores = mc.cores)
+            scores.values = sapply(scores, function(pair) pair$score)
+            
+                                        # pick the neighbor with the best score
+            k = which.min(scores.values)[1]
+            mask = scores[[k]]$mask
+            cat(scores.values[k], mask, "\n")
+            rtable = rbind(rtable, scores[[k]])
+            print(rtable)
+                                        # next
+            nextlst <- neighbors(mask.to.vec(mask))
+        }
+    rtable
+}
+   
+
+#sites = load.sites(c("CTCF_fimo.txt", "Elf1_fimo.txt", "Gata3_fimo.txt", "Max_fimo.txt", 
+#          "SP1_fimo.txt", "EBF1_fimo.txt", "REST_fimo.txt"))
+#names(sites) = c("CTCF", "Elf1", "Gata3", "Max", "SP1", "EBF1", "REST")
+
+#all the directory paths are probably wrong, but the code shoudl work if you can find where the files are
+
+system('mkdir C1_gDNA_rep1_PE1_minus')
+setwd('C1_gDNA_rep1_PE1_minus')
+
+#system('mkdir C1_gDNA_rep1_PE1_plus')
+#setwd('C1_gDNA_rep1_PE1_plus')
+
+seqOutBias.args = "../hg38.fa ../C1_gDNA_rep1_PE1_minus.bam --read-size=30"
+seqOutBias.args = "../hg38.fa ../C1_gDNA_rep1_PE1_plus.bam --read-size=30"
+
+seqOutBias.cmd = "seqOutBias"
+
+#I am starting here with a 10mer window, but depending on how much IC is outside this region when you
+#change the awk command in sectino 2.2 and carry it forward, you may want to make a wider window.
+initial.mask = "XXXXXXXXXXCXXXXXXXXXX"
+
+
+#This approach requires many kmer-mask evaluations, which correspond to full runs of seqOutBias. 
+#for some reason I can only run this with mc.core > 1 in an R terminal session and not an R environment:
+#this invokes run.cutmask, but this only needs to be implemented once per BAM file.
+#result.table = hc.search(sites, initial.mask, seqOutBias.args, prefix = "runhc_", sqcmd = seqOutBias.cmd, mc.cores = 4)
+
+sites = load.sites(c("../ATAC_bias_pe1_minus_00005_fimo.txt", "../ATAC_bias_pe1_plus_00005_fimo.txt", 
+                     "../ATAC_bias_pe2_minus_00005_fimo.txt", "../ATAC_bias_pe2_plus_00005_fimo.txt"))
+
+#i run the next line in the directory to get the tallymer file (takes a long time, but only once per directory)
+#otherwise running this in parallel gets messed up if the tallymer file is being generated by multiple calls
+#alternatively one can specify a talymer file location in the argument or just move the tallymer files
+system(paste('seqOutBias ', seqOutBias.args, 
+   ' --no-scale --out=runhc_XXXXXXXXXXCXXXXXXXXXX.tbl --bw=runhc_XXXXXXXXXXCXXXXXXXXXX.bw'))
+
+#use more mc.cores if you have more than 20 X in the mask
+result.table = hc.search.mods(sites, initial.mask, 
+                seqOutBias.args, prefix = "runhc_", sqcmd = seqOutBias.cmd, mc.cores = 20)
+
+
+
+######################
+######################
+system('mkdir C1_gDNA_rep1_PE1_minus_mo11')
+setwd('C1_gDNA_rep1_PE1_minus_mo11')
+
+#system('mkdir C1_gDNA_rep1_PE1_plus')
+#setwd('C1_gDNA_rep1_PE1_plus')
+
+
+seqOutBias.args = "../hg38.fa ../C1_gDNA_rep1_PE1_minus.bam --plus-offset=5 --minus-offset=6 --read-size=30"
+
+
+seqOutBias.cmd = "seqOutBias"
+
+run.cutmask <- function(cutmask, seqoutbias.args, prefix = "run_", bw.split = FALSE, cleanup = TRUE, sqcmd = "seqOutBias") {
+    # build system command
+    #
+    #   seqOutBias <fasta-file> <bam-file>... [options]
+    #
+    #  --kmer-mask=<cutmask>
+    #  --skip-bed
+    #  if bw.split => --stranded
+    #  --out=<... filename 1 ...>
+    #  --bw=<... filename 2 ...>
+    #
+    outfilename = paste(prefix, cutmask, ".tbl", sep='')
+    out_arg = paste("--out=", outfilename, sep='')
+    bwfilename = paste(prefix, cutmask, ".bw", sep='')
+    bw_arg = paste("--bw=", bwfilename, sep='')
+    mask_arg = paste("--kmer-mask=", cutmask, sep='')
+    cmd = paste(sqcmd, seqoutbias.args, mask_arg, "--skip-bed", out_arg, bw_arg)
+
+    # execute
+    print(cmd)
+    system(cmd)
+    
+
+    # clean up - remove files specific to this execution
+    if (cleanup) {
+        cat("deleting stuff ....\n")
+        cat("rm", outfilename,"\n")
+        unlink(outfilename)
+    }
+
+    # return output file names
+    if (bw.split) {
+        c(paste(prefix, cutmask, "_plus.bw", sep=''), paste(prefix, cutmask, "_minus.bw", sep=''))
+    } else {
+        c(bwfilename, bwfilename)
+    }
+}
+
+#I am starting here with a 10mer window, but depending on how much IC is outside this region when you
+#change the awk command in sectino 2.2 and carry it forward, you may want to make a wider window.
+initial.mask = "XXXXXXXXXX"
+
+
+#This approach requires many kmer-mask evaluations, which correspond to full runs of seqOutBias. 
+#for some reason I can only run this with mc.core > 1 in an R terminal session and not an R environment:
+#this invokes run.cutmask, but this only needs to be implemented once per BAM file.
+#result.table = hc.search(sites, initial.mask, seqOutBias.args, prefix = "runhc_", sqcmd = seqOutBias.cmd, mc.cores = 4)
+
+sites = load.sites(c("../ATAC_bias_pe1_minus_00005_fimo.txt", "../ATAC_bias_pe1_plus_00005_fimo.txt", 
+                     "../ATAC_bias_pe2_minus_00005_fimo.txt", "../ATAC_bias_pe2_plus_00005_fimo.txt"))
+
+#i run the next line in the directory to get the tallymer file (takes a long time, but only once per directory)
+#otherwise running this in parallel gets messed up if the tallymer file is being generated by multiple calls
+#alternatively one can specify a talymer file location in the argument or just move the tallymer files
+system(paste('seqOutBias ', seqOutBias.args, 
+   ' --no-scale --out=runhc_XXXXXXXXXX.tbl --bw=runhc_XXXXXXXXXX.bw'))
+
+#use more mc.cores if you have more than 20 X in the mask
+result.table = hc.search.mods(sites, initial.mask, 
+                seqOutBias.args, prefix = "runhc_", sqcmd = seqOutBias.cmd, mc.cores = 10)
+
+seqOutBias ../hg38.fa ../C1_gDNA_rep1_PE1_minus.bam --plus-offset=5 --minus-offset=6 --read-size=30 --kmer-size=10 --skip-bed --out=runhc_NXXXXCXXNXX.tbl --bw=runhc_NXXXXCXXNXX.bw
+@ 
+
+
+The results.table above takes a long time to run, so parallel options
+in Rivanna is almost a necessity. mc.cores runs a mask instance on each core.
+The \textit{hc.atac.cutmasks} below are empirically determined based upon
+the previous code chunk. Look at the first 12 \textit{N}
+instances. Here we are evaluating the k-mer masks over the top twelve
+positions, and we are loading the bigWigs that were previously generated.
+
+<<R_code_hillclimbing2, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize">>=
+
+
+setwd('C1_gDNA_rep1_PE1_plus')
+
+#these are the top 12 positions identified by hill climbing:
+hc.atac.cutmasks.plus = c('XXXXXXXXXXCXXXXXXXXXX',
+                     'XXXXXXNXXXCXXXXXXXXXX',
+                     'XXXXXXNXXXCXXXXNXXXXX',
+                     'XXXXXXNXXXCXNXXNXXXXX',
+                     'XXXXXXNXXNCXNXXNXXXXX',
+                     'XXXXNXNXXNCXNXXNXXXXX',
+                     'XXXXNXNXXNCXNXXNXNXXX',
+                     'XXXXNXNXXNCXNNXNXNXXX',
+                     'XXXXNXNXXNCXNNXNXNXNX',
+                     'XXXXNXNXXNCXNNXNXNXNN',
+                     'XNXXNXNXXNCXNNXNXNXNN',
+                     'XNXXNXNXXNCNNNXNXNXNN',
+                     'XNNXNXNXXNCNNNXNXNXNN')
+
+setwd('../C1_gDNA_rep1_PE1_minus')
+hc.atac.cutmasks.minus = c('XXXXXXXXXXCXXXXXXXXXX',
+                     'XXXXXXXXXXCXXXNXXXXXX',
+                     'XXXXXNXXXXCXXXNXXXXXX',
+                     'XXXXXNXXXXCNXXNXXXXXX',
+                     'XXXXXNXXNXCNXXNXXXXXX',
+                     'XXXXXNXXNXCNXXNXNXXXX',
+                     'XXXXXNXXNXCNXXNXNXXNX',
+                     'NXXXXNXXNXCNXXNXNXXNX',
+                     'NXXXXNXXNXCNXXNXNXNNX',
+                     'NXXNXNXXNXCNXXNXNXNNX',
+                     'NXXNXNNXNXCNXXNXNXNNX',
+                     'NXXNXNNXNNCNXXNXNXNNX',
+                     'NXXNXNNNNNCNXXNXNXNNX')
+
+
+em.scores.atac.plus = mclapply(hc.atac.cutmasks.plus, function(cutmask) {
+#    bw.paths = run.cutmask(cutmask, seqOutBias.args, sqcmd=seqOutBias.cmd, clean = FALSE, prefix = "runhc_")
+    bw.plus = load.bigWig(paste0('runhc_', cutmask, '.bigWig'))    
+    bw.minus = load.bigWig(paste0('runhc_', cutmask, '.bigWig'))
+    eval.cutmask(sites, bw.plus, bw.minus)
+}, mc.cores = 1)
+
+
+em.scores.atac.minus = mclapply(hc.atac.cutmasks.minus, function(cutmask) {
+#    bw.paths = run.cutmask(cutmask, seqOutBias.args, sqcmd=seqOutBias.cmd, clean = FALSE, prefix = "runhc_")
+    bw.plus = load.bigWig(paste0('runhc_', cutmask, '.bigWig'))    
+    bw.minus = load.bigWig(paste0('runhc_', cutmask, '.bigWig'))
+    eval.cutmask(sites, bw.plus, bw.minus)
+}, mc.cores = 1)
+ 
+
+
+save(em.scores.atac.plus, em.scores.atac.minus, 
+     file = 'em.scores.atac.all.ATAC-kmer_optimization_C1_gDNA_rep1_PE1_plus.Rdata')
+
+hc.atac.cutmasks.plus = factor(hc.atac.cutmasks.plus, levels=hc.atac.cutmasks.plus)
+
+pdf("ATAC-kmer_optimization_C1_gDNA_rep1_PE1_plus_ATACbias_seq.pdf", useDingbats=FALSE, width=4, height=6)
+dotplot(as.numeric(em.scores.atac.plus) ~ hc.atac.cutmasks.plus,
+        pch = 19,
+        cex =1,
+        col = 'black',
+        main = "Hill Climbing derived k-mer masks",
+        xlab = 'Masked Positions (plus)',
+        ylim = c(0, 12000),
+        scales=list(x=list(rot=45)),
+        ylab = expression(paste(Sigma, ' SDs between PSWM positions')))
+#for each set of TF PSWMs we sum the intensity of signal at each position, #then we take the standard deviation between positions.
+#The final metric is a sum of these standard deviations.
+dev.off()
+
+hc.atac.cutmasks.minus = factor(hc.atac.cutmasks.minus, levels=hc.atac.cutmasks.minus)
+
+pdf("ATAC-kmer_optimization_C1_gDNA_rep1_PE1_minus_ATACbias_seq.pdf", useDingbats=FALSE, width=4, height=6)
+dotplot(as.numeric(em.scores.atac.minus) ~ hc.atac.cutmasks.minus,
+        pch = 19,
+        cex =1,
+        col = 'black',
+        main = "Hill Climbing derived k-mer masks",
+        xlab = 'Masked Positions (minus)',
+        ylim = c(0, 12000),
+        scales=list(x=list(rot=45)),
+        ylab = expression(paste(Sigma, ' SDs between PSWM positions')))
+#for each set of TF PSWMs we sum the intensity of signal at each position, #then we take the standard deviation between positions.
+#The final metric is a sum of these standard deviations.
+dev.off()
+
+
+#does figure 4 of this give the correct sequence bias?:
+#https://www.biorxiv.org/content/10.1101/525808v1.full.pdf
+#what about this one:
+#https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1642-2
+@ 
+\clearpage 
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.9]{\string~/Desktop/atac_test/ATAC_kmer_optimization_C1_gDNA_rep1_PE1_plus_ATACbias_seq.pdf}
+\caption[HC top 12 PE1 plus postions]{Hill Climbing top 12 postions PE1 plus.}
+\label{Figure_HCpe1plus}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.9]{\string~/Desktop/atac_test/ATAC_kmer_optimization_C1_gDNA_rep1_PE1_minus_ATACbias_seq.pdf}
+\caption[HC top 12 PE1 minus postions]{Hill Climbing top 12 postions PE1 minus.}
+\label{Figure_HCpe1minus}
+\end{center}
+\end{figure}
+
+\clearpage 
+\subsection{Composite plots at ATAC bias site}
+
+Visualize how the composite profiles flatten.
+
+<<R_code_compositeplots2, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize">>=
+source('https://raw.githubusercontent.com/guertinlab/seqOutBias/master/docs/R/seqOutBias_functions.R')
+
+#needed to update this with the latest fimo version output
+parse.fimo <- function(file) {
+    fimo.data = read.table(file, skip = 1, sep ='\t')
+    res = fimo.data[, c(3,4,5,8,9,6, 2)]
+    colnames(res) = c('chr', 'start', 'end', 'score', 'pval', 'strand', 'motif')
+    return(res)
+}
+
+
+#THIS NEEDS WORK, LET ME KNOW IF THIS COMMENT IS STILL HERE WHEN YOU GET HERE
+
+#need to move the relevant bw files to a folder and change extensino to .bigWig
+#all.composites.ATAC = cycle.fimo.new.not.hotspots(path.dir.fimo = '~/Desktop/atac_test', rand.rows = 200000,
+#                   path.dir.bigWig = '/Users/guertinlab/Desktop/atac_test/no_shift_bigWigs/', window = 30, exp = 'ATAC')
+
+# make these files by cp them over to a new directory 
+#runhc_XXXXXXXXXXCXXXXXXXXXX.bigWig
+#runhc_XXXXXXNXXXCXNXXNXXXXX.bigWig
+#runhc_XXXXNXNXXNCXNXXNXNXXX.bigWig
+
+########
+
+
+setwd('C1_gDNA_rep1_PE1_plus')
+
+system('mkdir final')
+setwd('final')
+system('cp ../runhc_XXXXXXXXXXCXXXXXXXXXX.bw ./')
+system('cp ../runhc_XXXXXXNXXXCXNXXNXXXXX.bw ./')
+system('cp ../runhc_XXXXNXNXXNCXNXXNXNXXX.bw ./')
+system('mv runhc_XXXXXXXXXXCXXXXXXXXXX.bw runhc_XXXXXXXXXXCXXXXXXXXXX.bigWig')
+system('mv runhc_XXXXXXNXXXCXNXXNXXXXX.bw runhc_XXXXXXNXXXCXNXXNXXXXX.bigWig')
+system('mv runhc_XXXXNXNXXNCXNXXNXNXXX.bw runhc_XXXXNXNXXNCXNXXNXNXXX.bigWig')
+
+setwd('../C1_gDNA_rep1_PE1_minus')
+system('mkdir final')
+setwd('final')
+
+system('cp ../runhc_XXXXXXXXXXCXXXXXXXXXX.bw ./')
+system('cp ../runhc_XXXXXNXXXXCNXXNXXXXXX.bw ./')
+system('cp ../runhc_XXXXXNXXNXCNXXNXNXXNX.bw ./')
+system('mv runhc_XXXXXXXXXXCXXXXXXXXXX.bw runhc_XXXXXXXXXXCXXXXXXXXXX.bigWig')
+system('mv runhc_XXXXXNXXXXCNXXNXXXXXX.bw runhc_XXXXXNXXXXCNXXNXXXXXX.bigWig')
+system('mv runhc_XXXXXNXXNXCNXXNXNXXNX.bw runhc_XXXXXNXXNXCNXXNXNXXNX.bigWig')
+
+
+#all.composites.ATAC = cycle.fimo.new.not.hotspots(path.dir.fimo = '~/Desktop/atac_test', 
+#                   path.dir.bigWig = '/Users/guertinlab/Desktop/atac_test/C1_gDNA_rep1_PE1_plus/', 
+ #                  window = 30, exp = 'ATAC')
+
+
+all.composites.ATAC.bias.minus = cycle.fimo.new.not.hotspots(path.dir.fimo = '/Users/guertinlab/Desktop/atac_test', 
+                   path.dir.bigWig = '/Users/guertinlab/Desktop/atac_test/C1_gDNA_rep1_PE1_minus/final/', 
+                   window = 30, exp = 'ATAC')
+
+save(all.composites.ATAC.bias.minus, file = "all.composites.ATAC.bias.minus.Rdata")
+
+composites.func.panels.naked.chromatin(all.composites.ATAC.bias.minus[all.composites.ATAC.bias.minus$grp == 'ATAC_bias_pe1_minus_00005' | 
+                                       all.composites.ATAC.bias.minus$grp == 'ATAC_bias_pe1_plus_00005' |
+                                       all.composites.ATAC.bias.minus$grp == 'ATAC_bias_pe2_minus_00005' |
+                                       all.composites.ATAC.bias.minus$grp == 'ATAC_bias_pe2_plus_00005' ,],
+                                       fact = paste('ATACbias', sep= ' '), summit = 'Motif',
+                                       num = 24)
+
+atac_fimo_bias
+unique(all.composites.ATAC$cond)
+all.composites.ATAC$cond = gsub("runhc_XXXXXXXXXXCXXXXXXXXXX", "Raw", all.composites.ATAC$cond)
+all.composites.ATAC$cond = gsub("runhc_XXXXXXXXNXCNXXNXXXXXX", "Corrected", all.composites.ATAC$cond)
+
+composites.func.panels.naked.chromatin(all.composites.ATAC,
+                                       fact = paste('ATACbias_motifs', sep= ' '), summit = 'Motif',
+                                       num = 24, col.lines = rev(c(rgb(0,0,1,1/2),
+                                   rgb(0,0,0,1/2), rgb(1,1,0,1/2), rgb(1,0,1,1/2) )),
+                                   fill.poly = rev(c(rgb(0,0,1,1/4), rgb(0,0,0,1/4), 
+                                                     rgb(1,1,0,1/4), rgb(1,0,1,1/4) )))
+
+
+@ 
+
+
+\clearpage
+
+\begin{figure}[!htb]
+\begin{center}
+\includegraphics[scale=0.6]{\string~/Desktop/atac_test/composite_ATACbias_signals_Motif_peaks.pdf}
+\caption[Bias correction composite profile]{Bias correction composite profile.}
+\label{Figure_flatten_atacbias}
+\end{center}
+\end{figure}
+
+<<R_code_compositeplots, echo=TRUE, prompt=FALSE, eval=FALSE,  size ="scriptsize", engine='sh'>>=
+seqOutBias hg38.fa C1_gDNA_rep1_PE1_minus.bam --kmer-mask=XXXXXXXXXXXXXNXXXXXX --plus-offset=10 --minus-offset=11 --read-size=30 --out=runhc_XXXXXXXXXXXXXNXXXXXX_mo11.tbl --bw=runhc_XXXXXXXXXXXXXNXXXXXX_mo11.bw
+seqOutBias hg38.fa C1_gDNA_rep1_PE1_minus.bam --kmer-mask=XXXXXXXXXXXXXNXXXXXX --plus-offset=10 --minus-offset=9 --read-size=30 --out=runhc_XXXXXXXXXXXXXNXXXXXX_mo9.tbl --bw=runhc_XXXXXXXXXXXXXNXXXXXX_mo9.bw
+seqOutBias hg38.fa C1_gDNA_rep1_PE1_minus.bam --kmer-mask=XXXXXXXXXXXXXNXXXXXX --plus-offset=10 --minus-offset=10 --read-size=30 --out=runhc_XXXXXXXXXXXXXNXXXXXX_mo10.tbl --bw=runhc_XXXXXXXXXXXXXNXXXXXX_mo10.bw
+
+@ 
+\clearpage
+
+\section{Stopping here}
+
+At this point please let me know and I will touch base with you about
+using knitR to expand upon this document. Then we can 1) use section 7.2
+of the seqOutBias vignette to see if the expectation maximization
+k-mer mask of the combined Plus/Minus data matches our expectation
+from the hill climbing results and 2) test if the masks work on real
+ATAC data by finding true TF binding sites within ChIP peaks and
+plotting these composites at those sites.
+
+
+
+\clearpage
+\subsection{Testing with TFBS motifs}
+
+I need to update this, but it is largely lifted from seqOutBias. I
+think it is sufficient to load individual PSWM files to github and
+provide direct links to the files. Many of these TF binding sites are
+exhaustively characterized, so it is not necessary to show how we
+generated the PSWM files if they are just provided. Also, below there
+is a complication that we are using ATAC-seq data from cells and
+seeing how the profiles are flattened. I think this is a good test of
+the masks, but initially I support using the naked DNA data that we
+published in seqOutBias to optimize the mask on all genome-wide
+instances of a motif (FIMO) at some threshold, then go to published ATAC-seq
+data with corresponding ChIP-seq data (MAST) to exclusively focus on motifs
+within ATAC peaks to \textit{test} the determined mask. I want to pick
+20 motifs, with some AT-rich (like FoxA1 and HSF) and CG rich (like SP1
+and CTCF). Choosing the 20 motifs wisely is important, because the
+next section takes a long time to run. I also want to generate a
+simple function in R that loads a minimal MEME PSWM file and outputs a
+PDF seqLogo, so that we don't have to use ceqLogo...this is easy, the
+minimal meme file needs to be loaded into R and parsed to look like
+\texttt{pswm.pe1.minus.trans} from a previous code chunk.
+
+<<shell_ucsc_scaled_test, echo=TRUE, prompt=FALSE, eval=FALSE, size="scriptsize", engine='sh'>>=
+#This merged BAM can be the input for section 7.1 of the seqOutBias vignette
+#I do not believe there is any need to separate the plus and minus reads from the BAM, but it is probably a good coherence check
+
+
+#these chip-seq data come from either MCF7 or GM12878, so analysis is not precise at the moment. 
+#it is best to have binding data and accessibiltiy data from the same cells.
+#I use genomic fimo below anyways, so it does not matter
+
+url=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/
+wget ${url}wgEncodeHaibTfbsMcf7Elf1V0422111PkRep1.broadPeak.gz
+wget ${url}wgEncodeHaibTfbsMcf7Gata3V0422111PkRep1.broadPeak.gz
+wget ${url}wgEncodeHaibTfbsMcf7MaxV0422111PkRep1.broadPeak.gz
+#wget ${url}wgEncodeHaibTfbsMcf7CtcfcV0422111PkRep1.broadPeak.gz
+
+url=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeSydhTfbs/
+wget ${url}wgEncodeSydhTfbsGm12878Corestsc30189IggmusPk.narrowPeak.gz
+wget ${url}wgEncodeSydhTfbsGm12878Ebf1sc137065StdPk.narrowPeak.gz
+wget ${url}wgEncodeSydhTfbsGm12878Ctcfsc15914c20StdPk.narrowPeak.gz
+
+url=http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeHaibTfbs/
+wget ${url}wgEncodeHaibTfbsGm12878Sp1Pcr1xPkRep1.broadPeak.gz
+
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz
+gunzip hg19ToHg38.over.chain.gz
+
+
+for peak in *Mcf7*Rep1.broadPeak.gz
+do
+    name=$(echo $peak | awk -F"wgEncodeHaibTfbsMcf7" '{print $NF}' | awk -F"V0422111PkRep1.broadPeak.gz" '{print $1}')
+    unz=$(echo $peak | awk -F".gz" '{print $1}')
+    echo $name
+    gunzip $peak
+    echo $unz
+    liftOver $unz hg19ToHg38.over.chain $name.hg38.broadPeak $name.hg38.unmapped.txt -bedPlus=6
+    fastaFromBed -fi hg38.fa -bed $name.hg38.broadPeak -fo $name.hg38.fasta
+    gzip *broadPeak
+done
+
+for peak in *Gm12878*Peak.gz
+do
+    name=$(echo $peak | awk -F"TfbsGm12878" '{print $NF}' | awk -F"." '{print $1}')
+    unz=$(echo $peak | awk -F".gz" '{print $1}')
+    echo $name
+    gunzip $peak
+    echo $unz
+    liftOver $unz hg19ToHg38.over.chain $name.hg38.narrowPeak $name.hg38.narrow.unmapped.txt -bedPlus=6
+    fastaFromBed -fi hg38.fa -bed $name.hg38.narrowPeak -fo $name.hg38.fasta
+    gzip ${name}*Peak
+done
+
+#manually changing these names 
+mv Ctcfsc15914c20StdPk.hg38.fasta CTCF.hg38.fasta
+mv Sp1Pcr1xPkRep1.hg38.fasta SP1.hg38.fasta
+mv Ebf1sc137065StdPk.hg38.fasta EBF1.hg38.fasta
+mv Corestsc30189IggmusPk.hg38.fasta REST.hg38.fasta
+
+
+wget http://meme-suite.org/meme-software/Databases/motifs/motif_databases.12.12.tgz
+tar -xvf motif_databases.12.12.tgz
+head -9 motif_databases/JASPAR/JASPAR_CORE_2016_vertebrates.meme > header_meme_temp.txt
+grep -i -A 14 'MOTIF MA0058.3 MAX' motif_databases/JASPAR/JASPAR_CORE_2016.meme > max_temp.txt
+grep -i -A 16 'MOTIF MA0473.2 ELF1' motif_databases/JASPAR/JASPAR_CORE_2016.meme > elf1_temp.txt
+grep -i -A 12 'MOTIF MA0037.2 GATA3' motif_databases/JASPAR/JASPAR_CORE_2016.meme > gata3_temp.txt
+grep -i -A 23 'MOTIF MA0139.1 CTCF' motif_databases/JASPAR/JASPAR_CORE_2016.meme > CTCF_temp.txt
+grep -i -A 25 'MOTIF MA0138.2 REST' motif_databases/JASPAR/JASPAR_CORE_2016.meme > REST_temp.txt
+grep -i -A 18 'MOTIF MA0154.3 EBF1' motif_databases/JASPAR/JASPAR_CORE_2016.meme > EBF1_temp.txt
+grep -i -A 15 'MOTIF MA0079.3 SP1' motif_databases/JASPAR/JASPAR_CORE_2016.meme > SP1_temp.txt
+
+for i in *_temp.txt
+do
+    name=$(echo $i | awk -F"_temp" '{print $1}')
+    cat header_meme_temp.txt $i > ${name}_minimal_meme.txt
+done
+
+rm *temp.txt
+
+#fimo takes a while to run
+for meme in *.hg38.fasta
+do
+    name=$(echo $meme | awk -F".hg38.fasta" '{print $1}')
+    echo $name
+    mast ${name}_minimal_meme.txt $meme -hit_list -mt 0.0005 > ${name}_mast.txt
+    fimo --thresh 0.0001 --text ${name}_minimal_meme.txt hg38.fa > ${name}_fimo.txt
+    grep -v chrM ${name}_fimo.txt > ${name}_noM_fimo.txt
+    rm ${name}_fimo.txt
+    mv ${name}_noM_fimo.txt ${name}_fimo.txt
+    ceqlogo -i1 ${name}_minimal_meme.txt -o ${name}_logo.eps -N -Y
+done
+@ 
+
+\noindent After all this, I believe we will fully understand Tn5 bias and how to
+correct it and the next step is to test it with the GM12878 ATAC and
+ChIP data, as we did in seqOutBias. We should use PSWM and ChIP-seq
+data for factors that were not used in the Hill Climbing optimization
+as a true test set. I have some experience using pymol for Sathyan's
+paper and it woudl be great to layer the understanding fromt eh
+genomics onto the Tn5 structure...
+
+
+
+\clearpage
+<<auto-bib, version=packageVersion('knitr'), echo=FALSE, message=FALSE, warning=FALSE>>=
+# write all packages in the current session to a bib file
+write_bib(c(.packages(), 'evaluate', 'formatR'), file = 'knitr-packages.bib')
+@
+
+%% \clearpage forces all pending "floats" ie figures to
+%% print before the bibliography or a new section begins
+%% without \nocite bibliography would only print
+%% referces that were cited via a \cite{} directive
+%% \nocite{*}
+%% TO GET THE BIBLIOGRAPHY TO WORK  you need to
+%% do the following stupid things:
+%% (0) make sure you have a .bib file and that it is
+%% referenced in the .Rnw file as below
+%% (1) under Tools->Options Sweave clear the box marked:
+%% "Clean auxiliary output after compile"
+%% (2) compile to pdf at least once
+%% (3) in shell window in the same directory as your
+%% .Rnw file, type:  bibtex silly   (where silly is
+%% the name of your .Rnw file without the Rnw siffix)
+%% (4) subsequent compilations to pdf should include
+%% the bibliography
+%% ref: http:##www.demog.berkeley.edu/213/Latex/silly.Rnw
+\bibliographystyle{jss}
+\bibliography{knitr-packages,bib_page}
+
+\end{document}
